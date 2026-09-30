@@ -15,6 +15,14 @@ Egyszerű, böngészőben futó mini app, ami havonta legenerálja a jelenléti 
 Az adatokat a böngésző megjegyzi. Az **Adatok mentése fájlba** / **Adatok betöltése** gombokkal
 JSON fájlba menthető, illetve másik gépen visszatölthető.
 
+## Offline, egyfájlos változat
+
+A `jelenleti-offline.html` egyetlen fájlban tartalmaz mindent: elküldhető bárkinek, letöltés után
+dupla kattintással megnyitható, internet nélkül is működik, és a PDF letöltése mindenkinél megy.
+Módosítás után újragenerálás: `python3 tools/offline_build.py`.
+
+(A claude.ai-os artifact linken a PDF letöltése csak bejelentkezett felhasználóknak működik.)
+
 ## Szabályok
 
 - Munkanap: hétfő–péntek, kivéve a munkaszüneti napokat (jan. 1., márc. 15., nagypéntek,

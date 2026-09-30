@@ -465,12 +465,21 @@
 
   // Fájl felajánlása letöltésre. Claude artifactként a platform letöltés-képességén át,
   // sima böngészőben egy ideiglenes letöltési linkkel.
+  const LETOLTES_TILTVA = 'Ebben a nézetben a letöltés nem engedélyezett (a claude.ai linken csak bejelentkezve működik). '
+    + 'Jelentkezz be, vagy használd az offline változatot: jelenleti-offline.html.';
+
   async function letolt(fajlnev, adat, tipus) {
     const blob = new Blob([adat], { type: tipus });
-    const dl = window.claude && typeof window.claude.use === 'function' ? await window.claude.use('downloads') : null;
-    if (dl) {
+    // Claude artifactként a keretben csak a platform letöltés-képessége működik.
+    if (window.claude && typeof window.claude.use === 'function') {
+      const dl = await window.claude.use('downloads');
+      if (!dl) { uzen(LETOLTES_TILTVA); return; }
       try { await dl.save({ filename: fajlnev, data: blob }); } catch (e) {
-        if (e && e.code !== 'declined') uzen('A fájlt nem sikerült letölteni: ' + (e.message || e.code));
+        const code = e && e.code;
+        if (code === 'declined') return;
+        uzen(code === 'rate_limited' ? 'Már nyitva van egy letöltési ablak – próbáld újra pár másodperc múlva.'
+          : ['unavailable', 'not_granted', 'capability_disabled', 'capability_removed'].includes(code) || !code ? LETOLTES_TILTVA
+            : 'A fájlt nem sikerült letölteni: ' + (e.message || code));
       }
       return;
     }
