@@ -6,9 +6,11 @@ Egyszerű, böngészőben futó mini app, ami havonta legenerálja a jelenléti 
 ## Használat
 
 1. Nyisd meg az `index.html`-t böngészőben (dupla kattintás elég, nem kell szerver, internet sem).
-2. Add meg a munkáltatót és a dolgozókat (név, napi óraszám, kezdés – alapból 8 óra, 09:00-tól).
-3. Válaszd ki a hónapot, és a dolgozó naptárában kattints azokra a napokra, amikor szabadságon volt (piros).
-4. **PDF generálása** → letölti a `jelenleti_iv_ÉÉÉÉ-HH.pdf` fájlt.
+2. **Munkavállalók** fül: vedd fel a munkavállalókat – név, munkakör, adóazonosító jel, belépés/kilépés,
+   munkakezdés és heti beosztás (hétfőtől vasárnapig a napi óraszám; üres = nem dolgozik azon a napon).
+3. **Havi jelenléti ív** fül: add meg a munkáltatót, válaszd ki a hónapot, és a munkavállaló naptárában
+   kattints azokra a napokra, amikor szabadságon volt (piros).
+4. **PDF generálása** → letölti a `jelenleti_iv_ÉÉÉÉ-HH.pdf` fájlt (az adott hónapban aktív munkavállalók, egy-egy oldal).
 
 Az adatokat a böngésző megjegyzi. Az **Adatok mentése fájlba** / **Adatok betöltése** gombokkal
 JSON fájlba menthető, illetve másik gépen visszatölthető.
@@ -20,8 +22,11 @@ JSON fájlba menthető, illetve másik gépen visszatölthető.
 - Az áthelyezett munkanapok (ledolgozós szombatok, hídnapok) 2025-re és 2026-ra be vannak építve
   (`naptar.js`, `ATHELYEZESEK`). Új évnél ide kell felvenni őket, vagy az appban a
   „Cégszintű eltérések” résznél megadni.
-- Munkanapon: érkezés = kezdés, távozás = kezdés + napi óraszám, ledolgozott óra = napi óraszám.
-- Nem munkanapon és szabadnapon: `--------`.
+- Egy munkavállaló egy napon dolgozik, ha a beosztása szerint aznap van óraszáma, nem ünnepnap vagy
+  áthelyezett pihenőnap, jogviszonyban áll (belépés és kilépés között), és nincs szabadnapnak jelölve.
+  Áthelyezett munkanapon (pl. ledolgozós szombat) a helyettesített nap (pl. a pénteki hídnap) beosztása érvényes.
+- Munkanapon: érkezés = kezdés, távozás = kezdés + aznapi óraszám, ledolgozott óra = aznapi óraszám.
+- Minden más napon: `--------`.
 
 ## Fájlok
 

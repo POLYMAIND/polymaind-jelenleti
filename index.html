@@ -32,7 +32,6 @@
     .dolgozo { border-top: 1px solid var(--keret); padding: 14px 0; }
     .dolgozo:first-child { border-top: 0; padding-top: 0; }
     .dolgozo-fej { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
-    .torol { padding: 6px 10px; color: var(--halvany); }
     .naptar { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 4px; margin-top: 10px; }
     .nap { padding: 3px 0; font-size: 13px; line-height: 1.1; display: flex; flex-direction: column; align-items: center; }
     .nap small { font-size: 10px; color: var(--halvany); }
@@ -48,40 +47,74 @@
     .gombok { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     label.gomb { display: inline-block; font-size: 15px; border: 1px solid var(--keret); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
     label.gomb input { display: none; }
+    .fulek { display: flex; gap: 4px; border-bottom: 1px solid var(--keret); margin-bottom: 16px; }
+    .fulek button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 10px 14px; color: var(--halvany); font-weight: 600; }
+    .fulek button[aria-selected="true"] { color: var(--fo); border-bottom-color: var(--fo); }
+    [hidden] { display: none !important; }
+    .dolgozo-cim { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+    .dolgozo-cim span { font-size: 13px; color: var(--halvany); }
+    .racs { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+    .racs .szeles { grid-column: 1 / -1; }
+    .racs input, .dolgozo > .mezo input { width: 100%; }
+    .beosztas-cim { margin-top: 12px; }
+    .beosztas { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; margin: 4px 0 10px; }
+    .beosztas label { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; color: var(--halvany); }
+    .beosztas input { width: 56px; text-align: center; }
+    .heti { font-size: 13px; color: var(--halvany); padding: 0 0 8px 6px; }
+    .kartya-lab { margin-top: 10px; }
+    .torol { color: var(--szabad); }
+    .ures { color: var(--halvany); margin: 0 0 12px; }
+    .ures a { color: var(--fo); }
   </style>
 </head>
 <body>
 <main>
   <h1>Jelenléti ív generátor</h1>
-  <p class="alcim">Munkanapokon dolgozunk a megadott kezdéssel és napi óraszámmal. A szabadnapokat a dolgozó naptárában kattintással jelöld.</p>
+  <p class="alcim">Munkavállalónként megadott beosztás szerint, a magyar munkanaptárral generálja a havi jelenléti íveket.</p>
 
-  <section class="sor">
-    <label class="mezo" style="flex:1 1 240px"><span>Munkáltató</span><input id="ceg" type="text"></label>
-    <label class="mezo"><span>Hónap</span><input id="honap" type="month"></label>
-  </section>
+  <div class="fulek" role="tablist">
+    <button data-ful="havi" role="tab">Havi jelenléti ív</button>
+    <button data-ful="munkavallalok" role="tab">Munkavállalók</button>
+  </div>
 
-  <section>
-    <div id="honap-info"></div>
-    <div id="dolgozok"></div>
-    <button id="uj-dolgozo">+ Új dolgozó</button>
-  </section>
+  <div data-panel="havi">
+    <section class="sor">
+      <label class="mezo" style="flex:1 1 240px"><span>Munkáltató</span><input id="ceg" type="text"></label>
+      <label class="mezo"><span>Hónap</span><input id="honap" type="month"></label>
+    </section>
 
-  <section>
-    <details>
-      <summary>Cégszintű eltérések ebben a hónapban</summary>
-      <div class="sor">
-        <label class="mezo"><span>Extra pihenőnapok (mindenkinek)</span><input id="ceg-pihenonap" type="text" placeholder="pl. 2, 24-31"></label>
-        <label class="mezo"><span>Extra munkanapok (pl. ledolgozós szombat)</span><input id="ceg-munkanap" type="text" placeholder="pl. 13"></label>
-      </div>
-      <div id="ceg-hiba" class="hiba"></div>
-      <p class="megjegyzes">Az ünnepnapokat és a 2025–2026-os áthelyezett munkanapokat az app magától tudja. Ha egy évre még nincs beépítve, itt add meg.</p>
-    </details>
-  </section>
+    <section>
+      <div id="honap-info"></div>
+      <p class="megjegyzes" style="margin:0 0 12px">Kattints egy napra, ha az illető aznap szabadságon volt (piros). A szürke napokon a beosztása szerint nem dolgozik.</p>
+      <div id="dolgozok"></div>
+    </section>
 
-  <div class="gombok">
-    <button id="general" class="fo">PDF generálása</button>
-    <button id="export">Adatok mentése fájlba</button>
-    <label class="gomb">Adatok betöltése<input id="import" type="file" accept="application/json,.json"></label>
+    <section>
+      <details>
+        <summary>Cégszintű eltérések ebben a hónapban</summary>
+        <div class="sor">
+          <label class="mezo"><span>Extra pihenőnapok (mindenkinek)</span><input id="ceg-pihenonap" type="text" placeholder="pl. 2, 24-31"></label>
+          <label class="mezo"><span>Extra munkanapok (pl. ledolgozós szombat)</span><input id="ceg-munkanap" type="text" placeholder="pl. 13"></label>
+        </div>
+        <div id="ceg-hiba" class="hiba"></div>
+        <p class="megjegyzes">Az ünnepnapokat és a 2025–2026-os áthelyezett munkanapokat az app magától tudja. Ha egy évre még nincs beépítve, itt add meg.</p>
+      </details>
+    </section>
+
+    <div class="gombok">
+      <button id="general" class="fo">PDF generálása</button>
+    </div>
+  </div>
+
+  <div data-panel="munkavallalok" hidden>
+    <section>
+      <div id="munkavallalok-lista"></div>
+      <button id="uj-dolgozo">+ Új munkavállaló</button>
+    </section>
+    <div class="gombok">
+      <button id="export">Adatok mentése fájlba</button>
+      <label class="gomb">Adatok betöltése<input id="import" type="file" accept="application/json,.json"></label>
+    </div>
   </div>
 </main>
 

@@ -53,7 +53,11 @@
     return new Date(ev, honap, 0).getDate();
   }
 
-  // A hónap napjai: { nap, munkanap, ok } ahol ok a nem munkanap oka.
+  // A hónap napjai céges szempontból: { nap, hetNapja, tipus, oraNapja, ok }
+  //   tipus: 'normal' | 'unnep' | 'pihenonap' | 'athelyezett_munkanap' | 'extra_munkanap'
+  //   oraNapja: melyik hét napja szerinti beosztás érvényes (áthelyezett munkanapon
+  //   a helyettesített pihenőnapé, pl. szombaton dolgozunk a pénteki hídnap helyett).
+  //   munkanap: a szokásos H–P munkarend szerint munkanap-e (összesítéshez).
   // extra: { pihenonap: Set, munkanap: Set } cégszintű eltérések az adott hónapra.
   function honapNapjai(ev, honap, extra) {
     const unnep = unnepnapok(ev);
@@ -62,14 +66,25 @@
     for (let n = 1; n <= napokSzama(ev, honap); n++) {
       const d = new Date(ev, honap - 1, n);
       const kulcs = mmdd(d);
-      const hetvege = d.getDay() === 0 || d.getDay() === 6;
-      let munkanap = !hetvege, ok = hetvege ? 'hétvége' : '';
-      if (ath.munkanap.includes(kulcs)) { munkanap = true; ok = ''; }
-      if (ath.pihenonap.includes(kulcs)) { munkanap = false; ok = 'áthelyezett pihenőnap'; }
-      if (unnep.has(kulcs)) { munkanap = false; ok = 'ünnepnap'; }
-      if (extra && extra.munkanap && extra.munkanap.has(n)) { munkanap = true; ok = ''; }
-      if (extra && extra.pihenonap && extra.pihenonap.has(n)) { munkanap = false; ok = 'cégszintű pihenőnap'; }
-      napok.push({ nap: n, munkanap, ok, hetNapja: d.getDay() });
+      const hetNapja = d.getDay();
+      const nap = { nap: n, hetNapja, tipus: 'normal', oraNapja: hetNapja, ok: '' };
+      const athIdx = ath.munkanap.indexOf(kulcs);
+      if (athIdx >= 0) {
+        const [hh, nn] = ath.pihenonap[athIdx].split('-').map(Number);
+        nap.tipus = 'athelyezett_munkanap';
+        nap.oraNapja = new Date(ev, hh - 1, nn).getDay();
+        nap.ok = 'áthelyezett munkanap';
+      }
+      if (ath.pihenonap.includes(kulcs)) { nap.tipus = 'pihenonap'; nap.ok = 'áthelyezett pihenőnap'; }
+      if (unnep.has(kulcs)) { nap.tipus = 'unnep'; nap.ok = 'ünnepnap'; }
+      if (extra && extra.munkanap && extra.munkanap.has(n)) {
+        nap.tipus = 'extra_munkanap'; nap.oraNapja = hetNapja === 0 || hetNapja === 6 ? 5 : hetNapja; nap.ok = 'cégszintű munkanap';
+      }
+      if (extra && extra.pihenonap && extra.pihenonap.has(n)) { nap.tipus = 'pihenonap'; nap.ok = 'cégszintű pihenőnap'; }
+      const hetvege = hetNapja === 0 || hetNapja === 6;
+      nap.munkanap = nap.tipus === 'athelyezett_munkanap' || nap.tipus === 'extra_munkanap' || (nap.tipus === 'normal' && !hetvege);
+      if (nap.tipus === 'normal' && hetvege) nap.ok = 'hétvége';
+      napok.push(nap);
     }
     return napok;
   }

@@ -3,20 +3,39 @@
   const TAROLO_KULCS = 'jelenleti-v1';
 
   // ---------- Állapot ----------
+  // beosztas: napi óraszám a hét napjai szerint, Date.getDay() sorrendben (0 = vasárnap).
+  function ujDolgozo() {
+    return {
+      id: ujId(), nev: '', munkakor: '', adoazonosito: '', belepes: '', kilepes: '', megjegyzes: '',
+      kezdes: '09:00', beosztas: [0, 8, 8, 8, 8, 8, 0],
+    };
+  }
   function alapAllapot() {
     return {
       ceg: 'Polymaind Kft.',
-      dolgozok: [{ id: ujId(), nev: '', orak: 8, kezdes: '09:00' }],
+      dolgozok: [],
       szabadnapok: {}, // { 'ÉÉÉÉ-HH': { dolgozoId: [napok] } }
       cegszintu: {}, // { 'ÉÉÉÉ-HH': { pihenonap: '1, 2', munkanap: '' } }
     };
   }
   function ujId() { return Math.random().toString(36).slice(2, 10); }
 
+  // Régebbi mentések (egyetlen napi óraszám) átalakítása.
+  function normalizal(s) {
+    const a = Object.assign(alapAllapot(), s);
+    a.dolgozok = a.dolgozok.map((d) => {
+      const u = Object.assign(ujDolgozo(), d);
+      if (!Array.isArray(d.beosztas) && d.orak) u.beosztas = [0, d.orak, d.orak, d.orak, d.orak, d.orak, 0];
+      delete u.orak;
+      return u;
+    });
+    return a;
+  }
+
   function betolt() {
     try {
       const s = JSON.parse(localStorage.getItem(TAROLO_KULCS));
-      if (s && Array.isArray(s.dolgozok)) return Object.assign(alapAllapot(), s);
+      if (s && Array.isArray(s.dolgozok)) return normalizal(s);
     } catch (e) { /* üres vagy sérült tároló */ }
     return alapAllapot();
   }
@@ -61,26 +80,64 @@
     rajzol();
   }
 
-  // Egy dolgozó napjai a hónapban: { nap, dolgozik, erkezett, tavozott, orak }
+  const pad = (n) => String(n).padStart(2, '0');
+  function datumKulcs(ev, honap, nap) { return `${ev}-${pad(honap)}-${pad(nap)}`; }
+
+  // Az adott hónapban van-e jogviszonya (belépés/kilépés alapján).
+  function aktivAHonapban(d) {
+    const { ev, honap } = aktualisHonap();
+    const eleje = datumKulcs(ev, honap, 1), vege = datumKulcs(ev, honap, Naptar.napokSzama(ev, honap));
+    return (!d.belepes || d.belepes <= vege) && (!d.kilepes || d.kilepes >= eleje);
+  }
+
+  // Egy dolgozó napjai a hónapban: { nap, beosztva, dolgozik, szabad, ok, tervOra, erkezett, tavozott, orak }
   function dolgozoNapjai(dolgozo) {
+    const { ev, honap } = aktualisHonap();
     const szabad = szabadnapjai(dolgozo.id);
     return honapNapjai().map((n) => {
-      const dolgozik = n.munkanap && !szabad.has(n.nap);
+      const datum = datumKulcs(ev, honap, n.nap);
+      const orak = Number(dolgozo.beosztas[n.oraNapja]) || 0;
+      let ok = '';
+      if (dolgozo.belepes && datum < dolgozo.belepes) ok = 'belépés előtt';
+      else if (dolgozo.kilepes && datum > dolgozo.kilepes) ok = 'kilépés után';
+      else if (n.tipus === 'unnep' || n.tipus === 'pihenonap') ok = n.ok;
+      else if (!orak) ok = n.munkanap ? 'nem dolgozik ezen a napon' : n.ok || 'nem dolgozik ezen a napon';
+      const beosztva = !ok;
+      const dolgozik = beosztva && !szabad.has(n.nap);
       return {
         nap: n.nap,
+        hetNapja: n.hetNapja,
+        beosztva,
         dolgozik,
+        szabad: beosztva && szabad.has(n.nap),
+        ok,
+        tervOra: orak,
         erkezett: dolgozik ? dolgozo.kezdes : null,
-        tavozott: dolgozik ? Naptar.idoHozzaad(dolgozo.kezdes, dolgozo.orak) : null,
-        orak: dolgozik ? dolgozo.orak : null,
+        tavozott: dolgozik ? Naptar.idoHozzaad(dolgozo.kezdes, orak) : null,
+        orak: dolgozik ? orak : null,
       };
     });
   }
 
   // ---------- Felület ----------
   const HET_NAPJAI = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];
+  const HET_SORREND = [1, 2, 3, 4, 5, 6, 0]; // hétfőtől vasárnapig
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const oraSzoveg = (o) => String(o).replace('.', ',');
+
+  function beosztasSzoveg(d) {
+    const napok = HET_SORREND.filter((i) => Number(d.beosztas[i]) > 0);
+    if (!napok.length) return 'nincs beosztás';
+    return napok.map((i) => `${HET_NAPJAI[i]} ${oraSzoveg(d.beosztas[i])}`).join(', ');
+  }
 
   function rajzol() {
     $('ceg').value = allapot.ceg;
+    rajzolHavi();
+    rajzolMunkavallalok();
+  }
+
+  function rajzolHavi() {
     const napok = honapNapjai();
     const elteres = cegszintuEltereses();
     const { kulcs } = aktualisHonap();
@@ -90,74 +147,122 @@
     $('ceg-hiba').textContent = elteres.hibak.length ? 'Nem értelmezhető: ' + elteres.hibak.join(', ') : '';
 
     const munkanapDb = napok.filter((n) => n.munkanap).length;
-    $('honap-info').textContent = `${munkanapDb} munkanap ebben a hónapban`;
+    $('honap-info').textContent = `${munkanapDb} munkanap ebben a hónapban (H–P munkarend szerint)`;
 
     const lista = $('dolgozok');
     lista.innerHTML = '';
-    allapot.dolgozok.forEach((d) => {
+    const aktivak = allapot.dolgozok.filter(aktivAHonapban);
+    if (!aktivak.length) {
+      lista.innerHTML = `<p class="ures">${allapot.dolgozok.length
+        ? 'Ebben a hónapban nincs aktív munkavállaló.'
+        : 'Még nincs munkavállaló. Vedd fel őket a <a href="#" data-ful-link="munkavallalok">Munkavállalók</a> fülön.'}</p>`;
+      const link = lista.querySelector('[data-ful-link]');
+      if (link) link.addEventListener('click', (e) => { e.preventDefault(); fulValt('munkavallalok'); });
+      return;
+    }
+    aktivak.forEach((d) => {
       const napjai = dolgozoNapjai(d);
       const ledolgozott = napjai.filter((n) => n.dolgozik);
-      const szabad = szabadnapjai(d.id);
+      const oraOssz = ledolgozott.reduce((s, n) => s + n.orak, 0);
+      const szabadDb = napjai.filter((n) => n.szabad).length;
 
       const kartya = document.createElement('div');
       kartya.className = 'dolgozo';
       kartya.innerHTML = `
-        <div class="dolgozo-fej">
-          <label class="mezo nev"><span>Név</span><input type="text" data-mezo="nev" placeholder="Dolgozó neve"></label>
-          <label class="mezo"><span>Napi óra</span><input type="number" data-mezo="orak" min="1" max="12" step="0.5"></label>
-          <label class="mezo"><span>Kezdés</span><input type="time" data-mezo="kezdes" step="900"></label>
-          <button class="torol" title="Dolgozó törlése" aria-label="Dolgozó törlése">✕</button>
-        </div>
+        <div class="dolgozo-cim"><strong>${esc(d.nev || 'Névtelen')}</strong>
+          <span>${esc(d.munkakor)}${d.munkakor ? ' · ' : ''}${esc(d.kezdes)}-tól · ${esc(beosztasSzoveg(d))}</span></div>
         <div class="naptar"></div>
-        <div class="osszesito">${ledolgozott.length} nap · ${ledolgozott.length * d.orak} óra${szabad.size ? ` · ${szabad.size} szabadnap` : ''}</div>`;
-
-      kartya.querySelectorAll('input[data-mezo]').forEach((inp) => {
-        const mezo = inp.dataset.mezo;
-        inp.value = d[mezo];
-        inp.addEventListener('change', () => {
-          if (mezo === 'orak') {
-            const v = parseFloat(inp.value);
-            if (!(v > 0 && v <= 24)) { inp.value = d.orak; return; }
-            d.orak = v;
-          } else if (mezo === 'kezdes') {
-            if (!/^\d{2}:\d{2}$/.test(inp.value)) { inp.value = d.kezdes; return; }
-            d.kezdes = inp.value;
-          } else {
-            d[mezo] = inp.value.trim();
-          }
-          ment();
-          rajzol();
-        });
-      });
-      kartya.querySelector('.torol').addEventListener('click', () => {
-        if (!confirm(`Biztosan törlöd: ${d.nev || 'névtelen dolgozó'}?`)) return;
-        allapot.dolgozok = allapot.dolgozok.filter((x) => x.id !== d.id);
-        ment();
-        rajzol();
-      });
+        <div class="osszesito">${ledolgozott.length} nap · ${oraSzoveg(oraOssz)} óra${szabadDb ? ` · ${szabadDb} szabadnap` : ''}</div>`;
 
       const naptar = kartya.querySelector('.naptar');
-      napok.forEach((n) => {
+      napjai.forEach((n) => {
         const cella = document.createElement('button');
         cella.type = 'button';
         cella.className = 'nap';
         cella.innerHTML = `<small>${HET_NAPJAI[n.hetNapja]}</small>${n.nap}`;
-        if (!n.munkanap) {
+        if (!n.beosztva) {
           cella.classList.add('pihen');
           cella.disabled = true;
           cella.title = n.ok;
-        } else if (szabad.has(n.nap)) {
+        } else if (n.szabad) {
           cella.classList.add('szabad');
           cella.title = 'Szabadnap – kattints a visszavonáshoz';
         } else {
-          cella.title = 'Munkanap – kattints, ha szabadnap';
+          cella.title = `Munkanap (${oraSzoveg(n.tervOra)} óra) – kattints, ha szabadnap`;
         }
         cella.addEventListener('click', () => szabadnapValt(d.id, n.nap));
         naptar.appendChild(cella);
       });
-
       lista.appendChild(kartya);
     });
+  }
+
+  function rajzolMunkavallalok() {
+    const lista = $('munkavallalok-lista');
+    lista.innerHTML = '';
+    if (!allapot.dolgozok.length) lista.innerHTML = '<p class="ures">Még nincs munkavállaló.</p>';
+    allapot.dolgozok.forEach((d) => {
+      const kartya = document.createElement('div');
+      kartya.className = 'dolgozo';
+      kartya.innerHTML = `
+        <div class="racs">
+          <label class="mezo szeles"><span>Név</span><input type="text" data-mezo="nev" placeholder="Munkavállaló neve"></label>
+          <label class="mezo"><span>Munkakör</span><input type="text" data-mezo="munkakor"></label>
+          <label class="mezo"><span>Adóazonosító jel</span><input type="text" data-mezo="adoazonosito" inputmode="numeric"></label>
+          <label class="mezo"><span>Belépés</span><input type="date" data-mezo="belepes"></label>
+          <label class="mezo"><span>Kilépés</span><input type="date" data-mezo="kilepes"></label>
+          <label class="mezo"><span>Munkakezdés</span><input type="time" data-mezo="kezdes" step="900"></label>
+        </div>
+        <div class="mezo beosztas-cim"><span>Beosztás – napi óraszám (üres vagy 0 = nem dolgozik azon a napon)</span></div>
+        <div class="beosztas">
+          ${HET_SORREND.map((i) => `<label><span>${HET_NAPJAI[i]}</span><input type="number" min="0" max="24" step="0.5" data-nap="${i}"></label>`).join('')}
+          <span class="heti"></span>
+        </div>
+        <label class="mezo"><span>Megjegyzés</span><input type="text" data-mezo="megjegyzes"></label>
+        <div class="kartya-lab"><button class="torol">Munkavállaló törlése</button></div>`;
+
+      const hetiFrissit = () => {
+        const ossz = d.beosztas.reduce((s, o) => s + (Number(o) || 0), 0);
+        kartya.querySelector('.heti').textContent = `heti ${oraSzoveg(ossz)} óra`;
+      };
+      hetiFrissit();
+
+      kartya.querySelectorAll('input[data-mezo]').forEach((inp) => {
+        const mezo = inp.dataset.mezo;
+        inp.value = d[mezo] || '';
+        inp.addEventListener('change', () => {
+          if (mezo === 'kezdes' && !/^\d{2}:\d{2}$/.test(inp.value)) { inp.value = d.kezdes; return; }
+          d[mezo] = inp.value.trim();
+          ment();
+          rajzolHavi();
+        });
+      });
+      kartya.querySelectorAll('input[data-nap]').forEach((inp) => {
+        const i = +inp.dataset.nap;
+        inp.value = Number(d.beosztas[i]) || '';
+        inp.addEventListener('change', () => {
+          const v = inp.value === '' ? 0 : parseFloat(inp.value);
+          if (!(v >= 0 && v <= 24)) { inp.value = Number(d.beosztas[i]) || ''; return; }
+          d.beosztas[i] = v;
+          hetiFrissit();
+          ment();
+          rajzolHavi();
+        });
+      });
+      kartya.querySelector('.torol').addEventListener('click', () => {
+        if (!confirm(`Biztosan törlöd: ${d.nev || 'névtelen munkavállaló'}?`)) return;
+        allapot.dolgozok = allapot.dolgozok.filter((x) => x.id !== d.id);
+        ment();
+        rajzol();
+      });
+      lista.appendChild(kartya);
+    });
+  }
+
+  function fulValt(ful) {
+    document.querySelectorAll('[data-ful]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.ful === ful)));
+    document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== ful; });
+    try { localStorage.setItem(TAROLO_KULCS + '-ful', ful); } catch (e) { /* nem kritikus */ }
   }
 
   // ---------- PDF ----------
@@ -181,8 +286,8 @@
   const OSZLOP = [{ ido: 163.8, ora: 270.1 }, { ido: 436.2, ora: 542.3 }]; // középpontok
 
   async function pdfGeneral() {
-    const dolgozok = allapot.dolgozok.filter((d) => d.nev);
-    if (!dolgozok.length) { alert('Adj meg legalább egy dolgozót névvel.'); return; }
+    const dolgozok = allapot.dolgozok.filter((d) => d.nev && aktivAHonapban(d));
+    if (!dolgozok.length) { alert('Ebben a hónapban nincs aktív, névvel megadott munkavállaló.'); return; }
     const { ev, honap, kulcs } = aktualisHonap();
 
     const { PDFDocument, rgb } = PDFLib;
@@ -250,7 +355,7 @@
       try {
         const s = JSON.parse(r.result);
         if (!Array.isArray(s.dolgozok)) throw new Error('hiányzó dolgozólista');
-        allapot = Object.assign(alapAllapot(), s);
+        allapot = normalizal(s);
         ment();
         rajzol();
       } catch (e) {
@@ -274,15 +379,21 @@
     });
   });
   $('uj-dolgozo').addEventListener('click', () => {
-    allapot.dolgozok.push({ id: ujId(), nev: '', orak: 8, kezdes: '09:00' });
+    allapot.dolgozok.push(ujDolgozo());
     ment();
     rajzol();
+    const nevek = document.querySelectorAll('#munkavallalok-lista input[data-mezo=nev]');
+    if (nevek.length) nevek[nevek.length - 1].focus();
   });
+  document.querySelectorAll('[data-ful]').forEach((b) => b.addEventListener('click', () => fulValt(b.dataset.ful)));
   $('general').addEventListener('click', () => {
     pdfGeneral().catch((e) => { console.error(e); alert('Hiba a PDF készítésekor: ' + e.message); });
   });
   $('export').addEventListener('click', exportal);
   $('import').addEventListener('change', (e) => { if (e.target.files[0]) importal(e.target.files[0]); e.target.value = ''; });
 
+  let mentettFul = null;
+  try { mentettFul = localStorage.getItem(TAROLO_KULCS + '-ful'); } catch (e) { /* nem kritikus */ }
+  fulValt(mentettFul || (allapot.dolgozok.length ? 'havi' : 'munkavallalok'));
   rajzol();
 })();
