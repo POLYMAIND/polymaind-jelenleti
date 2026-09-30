@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jelenléti ív generátor</title>
+  <style>
+    :root {
+      --hatter: #f5f5f3; --lap: #fff; --szoveg: #1d1d1b; --halvany: #6b6b66; --keret: #dcdcd6;
+      --pihen: #ecebe6; --szabad: #d9534f; --fo: #2f5d8a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --hatter: #1a1a19; --lap: #242423; --szoveg: #ecece8; --halvany: #9d9d97; --keret: #3a3a38;
+        --pihen: #2e2e2c; --szabad: #c9443f; --fo: #6fa3d6;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--hatter); color: var(--szoveg); font: 15px/1.4 system-ui, sans-serif; }
+    main { max-width: 900px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    .alcim { color: var(--halvany); margin: 0 0 20px; }
+    section { background: var(--lap); border: 1px solid var(--keret); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .sor { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .mezo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--halvany); }
+    .mezo.nev { flex: 1 1 220px; }
+    input { font: inherit; color: var(--szoveg); background: var(--lap); border: 1px solid var(--keret); border-radius: 6px; padding: 6px 8px; }
+    input[type=number] { width: 80px; }
+    button { font: inherit; cursor: pointer; border-radius: 6px; border: 1px solid var(--keret); background: var(--lap); color: var(--szoveg); padding: 7px 12px; }
+    button.fo { background: var(--fo); border-color: var(--fo); color: #fff; font-weight: 600; }
+    #honap-info { color: var(--halvany); font-size: 13px; padding-bottom: 8px; }
+    .dolgozo { border-top: 1px solid var(--keret); padding: 14px 0; }
+    .dolgozo:first-child { border-top: 0; padding-top: 0; }
+    .dolgozo-fej { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+    .torol { padding: 6px 10px; color: var(--halvany); }
+    .naptar { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 4px; margin-top: 10px; }
+    .nap { padding: 3px 0; font-size: 13px; line-height: 1.1; display: flex; flex-direction: column; align-items: center; }
+    .nap small { font-size: 10px; color: var(--halvany); }
+    .nap.pihen { background: var(--pihen); color: var(--halvany); cursor: default; border-color: transparent; }
+    .nap.szabad { background: var(--szabad); border-color: var(--szabad); color: #fff; }
+    .nap.szabad small { color: #fff; }
+    .osszesito { font-size: 13px; color: var(--halvany); margin-top: 6px; }
+    details summary { cursor: pointer; font-weight: 600; }
+    details .sor { margin-top: 12px; }
+    details .mezo { flex: 1 1 220px; }
+    .hiba { color: var(--szabad); font-size: 13px; margin-top: 6px; }
+    .megjegyzes { font-size: 13px; color: var(--halvany); margin: 8px 0 0; }
+    .gombok { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    label.gomb { display: inline-block; font-size: 15px; border: 1px solid var(--keret); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+    label.gomb input { display: none; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Jelenléti ív generátor</h1>
+  <p class="alcim">Munkanapokon dolgozunk a megadott kezdéssel és napi óraszámmal. A szabadnapokat a dolgozó naptárában kattintással jelöld.</p>
+
+  <section class="sor">
+    <label class="mezo" style="flex:1 1 240px"><span>Munkáltató</span><input id="ceg" type="text"></label>
+    <label class="mezo"><span>Hónap</span><input id="honap" type="month"></label>
+  </section>
+
+  <section>
+    <div id="honap-info"></div>
+    <div id="dolgozok"></div>
+    <button id="uj-dolgozo">+ Új dolgozó</button>
+  </section>
+
+  <section>
+    <details>
+      <summary>Cégszintű eltérések ebben a hónapban</summary>
+      <div class="sor">
+        <label class="mezo"><span>Extra pihenőnapok (mindenkinek)</span><input id="ceg-pihenonap" type="text" placeholder="pl. 2, 24-31"></label>
+        <label class="mezo"><span>Extra munkanapok (pl. ledolgozós szombat)</span><input id="ceg-munkanap" type="text" placeholder="pl. 13"></label>
+      </div>
+      <div id="ceg-hiba" class="hiba"></div>
+      <p class="megjegyzes">Az ünnepnapokat és a 2025–2026-os áthelyezett munkanapokat az app magától tudja. Ha egy évre még nincs beépítve, itt add meg.</p>
+    </details>
+  </section>
+
+  <div class="gombok">
+    <button id="general" class="fo">PDF generálása</button>
+    <button id="export">Adatok mentése fájlba</button>
+    <label class="gomb">Adatok betöltése<input id="import" type="file" accept="application/json,.json"></label>
+  </div>
+</main>
+
+<script src="lib/pdf-lib.min.js"></script>
+<script src="lib/fontkit.umd.min.js"></script>
+<script src="lib/assets.js"></script>
+<script src="naptar.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
