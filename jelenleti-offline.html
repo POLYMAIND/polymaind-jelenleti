@@ -630,12 +630,11 @@ window.JELENLETI_ASSETS = {
       };
       teglalap(LAP.margo, FEJ_TETO, tartW, FEJ_SOR * 2, { keret: SZIN.vonal });
       vonal(LAP.margo, FEJ_TETO + FEJ_SOR, LAP.w - LAP.margo, FEJ_TETO + FEJ_SOR);
-      vonal(LAP.margo + balW, FEJ_TETO, LAP.margo + balW, FEJ_TETO + 2 * FEJ_SOR);
+      vonal(LAP.margo + balW, FEJ_TETO, LAP.margo + balW, FEJ_TETO + FEJ_SOR);
       mezo('Munkáltató', allapot.ceg, LAP.margo, FEJ_TETO, balW);
       mezo('Időszak', `${ev}. ${Naptar.HONAPOK[honap - 1].toLowerCase()}`, LAP.margo + balW, FEJ_TETO, tartW - balW);
-      mezo('Munkavállaló neve', d.nev, LAP.margo, FEJ_TETO + FEJ_SOR, balW,
-        { felkover: true, jobbra: d.adoazonosito ? `Adóazonosító: ${d.adoazonosito}` : '' });
-      mezo('Munkakör', d.munkakor, LAP.margo + balW, FEJ_TETO + FEJ_SOR, tartW - balW);
+      mezo('Munkavállaló neve', d.nev, LAP.margo, FEJ_TETO + FEJ_SOR, tartW,
+        { felkover: true, jobbra: d.adoazonosito ? `Adóazonosító jel: ${d.adoazonosito}` : '' });
 
       // ---- Táblázat ----
       const napjai = dolgozoNapjai(d);
