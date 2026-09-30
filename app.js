@@ -289,17 +289,24 @@
     return out;
   }
 
-  // Az eredeti jelenléti ív koordinátái (pontban, a lap tetejétől mérve).
-  const LAP = { w: 595.5, h: 842.25 };
-  const HATTER = { x: -8.7725, y: 0, w: 631.738, h: 842.5675 };
-  const ASC = 0.928; // Amiko ascender / em
-  const FEJLEC = { ceg: [123.3, 80.9], nev: [125.8, 121.9], ev: [313.4, 121.9], honap: [410.6, 121.9] };
-  // Az „Érkezett” sor teteje napokra (1–31); a „Távozott” 18 ponttal lejjebb.
-  const SOR_TETO = [
-    180.6, 216.8, 252.9, 287.1, 323.0, 358.9, 394.8, 431.1, 465.4, 501.5, 538.2, 574.1, 610.0, 644.1, 678.1,
-    180.6, 214.6, 251.6, 287.5, 322.6, 358.7, 394.8, 430.9, 465.4, 501.3, 538.0, 574.6, 608.7, 644.9, 681.0, 717.1,
-  ];
-  const OSZLOP = [{ ido: 163.8, ora: 270.1 }, { ido: 436.2, ora: 542.3 }]; // középpontok
+  // A lap elrendezése pontban (A4), a lap tetejétől mérve.
+  const LAP = { w: 595.28, h: 841.89, margo: 36 };
+  const FEJ_TETO = 72, FEJ_SOR = 34;          // fejléc-dobozok
+  const TABLA_TETO = 156, TABLA_FEJ = 22;     // táblázat fejléce
+  const BLOKK = 34;                           // egy nap magassága (két sor)
+  const OSZLOP_KOZ = 16;
+  const OSZL = { nap: 40, cimke: 54, ido: 46, alairas: 0, ora: 42 };
+  OSZL.alairas = (LAP.w - 2 * LAP.margo - OSZLOP_KOZ) / 2 - OSZL.nap - OSZL.cimke - OSZL.ido - OSZL.ora;
+
+  const OK_FELIRAT = {
+    'hétvége': 'hétvége',
+    'ünnepnap': 'munkaszüneti nap',
+    'áthelyezett pihenőnap': 'pihenőnap',
+    'cégszintű pihenőnap': 'pihenőnap',
+    'nem dolgozik ezen a napon': 'nem munkanap',
+    'belépés előtt': 'belépés előtt',
+    'kilépés után': 'kilépés után',
+  };
 
   async function pdfGeneral() {
     uzen('');
@@ -310,38 +317,145 @@
     const { PDFDocument, rgb } = PDFLib;
     const doc = await PDFDocument.create();
     doc.registerFontkit(fontkit);
-    const font = await doc.embedFont(base64Bajtok(JELENLETI_ASSETS.font), { subset: true });
-    const hatter = await doc.embedJpg(base64Bajtok(JELENLETI_ASSETS.background));
-    const fekete = rgb(0, 0, 0);
+    const normal = await doc.embedFont(base64Bajtok(JELENLETI_ASSETS.font), { subset: true });
+    const felkover = await doc.embedFont(base64Bajtok(JELENLETI_ASSETS.fontBold), { subset: true });
+    doc.setTitle(`Jelenléti ív – ${ev}. ${Naptar.HONAPOK[honap - 1].toLowerCase()}`);
+    doc.setAuthor(allapot.ceg);
 
-    const ir = (lap, szoveg, x, teto, meret, kozepre) => {
-      const w = font.widthOfTextAtSize(szoveg, meret);
-      lap.drawText(szoveg, {
-        x: kozepre ? x - w / 2 : x,
-        y: LAP.h - (teto + ASC * meret),
-        size: meret, font, color: fekete,
-      });
+    const SZIN = {
+      tinta: rgb(0.1, 0.1, 0.12),
+      halvany: rgb(0.42, 0.42, 0.45),
+      vonal: rgb(0.2, 0.2, 0.22),
+      belso: rgb(0.62, 0.62, 0.65),
+      fejHatter: rgb(0.91, 0.92, 0.94),
+      pihenHatter: rgb(0.955, 0.955, 0.96),
     };
 
     dolgozok.forEach((d) => {
       const lap = doc.addPage([LAP.w, LAP.h]);
-      lap.drawImage(hatter, { x: HATTER.x, y: LAP.h - HATTER.y - HATTER.h, width: HATTER.w, height: HATTER.h });
-      ir(lap, allapot.ceg, ...FEJLEC.ceg, 14);
-      ir(lap, d.nev, ...FEJLEC.nev, 14);
-      ir(lap, String(ev), ...FEJLEC.ev, 14);
-      ir(lap, Naptar.HONAPOK[honap - 1], ...FEJLEC.honap, 14);
+      const Y = (teto) => LAP.h - teto;
 
-      dolgozoNapjai(d).forEach((n) => {
-        const oszlop = OSZLOP[n.nap <= 15 ? 0 : 1];
-        const teto = SOR_TETO[n.nap - 1];
-        if (n.dolgozik) {
-          ir(lap, n.erkezett, oszlop.ido, teto, 11, true);
-          ir(lap, n.tavozott, oszlop.ido, teto + 18, 11, true);
-          ir(lap, String(n.orak).replace('.', ','), oszlop.ora, teto + 7.7, 11, true);
-        } else {
-          ir(lap, '--------', oszlop.ido, teto, 11, true);
-          ir(lap, '--------', oszlop.ido, teto + 18, 11, true);
+      // Szöveg: x a vízszintes horgony, yKozep a sor függőleges közepe.
+      const ir = (szoveg, x, yKozep, meret, o = {}) => {
+        const font = o.felkover ? felkover : normal;
+        const w = font.widthOfTextAtSize(szoveg, meret);
+        const igazit = o.igazit || 'bal';
+        lap.drawText(szoveg, {
+          x: igazit === 'kozep' ? x - w / 2 : igazit === 'jobb' ? x - w : x,
+          y: Y(yKozep) - meret * 0.34,
+          size: meret, font, color: o.szin || SZIN.tinta,
+        });
+      };
+      const vonal = (x1, y1, x2, y2, vastag = 0.5, szin = SZIN.belso) =>
+        lap.drawLine({ start: { x: x1, y: Y(y1) }, end: { x: x2, y: Y(y2) }, thickness: vastag, color: szin });
+      const teglalap = (x, teto, w, h, o = {}) => lap.drawRectangle({
+        x, y: Y(teto + h), width: w, height: h,
+        color: o.kitoltes, borderColor: o.keret, borderWidth: o.keret ? (o.vastag || 0.9) : 0,
+      });
+
+      // ---- Cím ----
+      ir('JELENLÉTI ÍV', LAP.margo, 44, 18, { felkover: true });
+      vonal(LAP.margo, 58, LAP.w - LAP.margo, 58, 1.2, SZIN.vonal);
+
+      // ---- Fejléc-dobozok ----
+      const tartW = LAP.w - 2 * LAP.margo;
+      const balW = tartW * 0.62;
+      const mezo = (cimke, ertek, x, teto, w, o = {}) => {
+        ir(cimke.toUpperCase(), x + 7, teto + 9, 6.5, { felkover: true, szin: SZIN.halvany });
+        ir(ertek || '', x + 7, teto + 23, 11.5, { felkover: o.felkover });
+        if (o.jobbra) ir(o.jobbra, x + w - 7, teto + 23, 8.5, { igazit: 'jobb', szin: SZIN.halvany });
+      };
+      teglalap(LAP.margo, FEJ_TETO, tartW, FEJ_SOR * 2, { keret: SZIN.vonal });
+      vonal(LAP.margo, FEJ_TETO + FEJ_SOR, LAP.w - LAP.margo, FEJ_TETO + FEJ_SOR);
+      vonal(LAP.margo + balW, FEJ_TETO, LAP.margo + balW, FEJ_TETO + 2 * FEJ_SOR);
+      mezo('Munkáltató', allapot.ceg, LAP.margo, FEJ_TETO, balW);
+      mezo('Időszak', `${ev}. ${Naptar.HONAPOK[honap - 1].toLowerCase()}`, LAP.margo + balW, FEJ_TETO, tartW - balW);
+      mezo('Munkavállaló neve', d.nev, LAP.margo, FEJ_TETO + FEJ_SOR, balW,
+        { felkover: true, jobbra: d.adoazonosito ? `Adóazonosító: ${d.adoazonosito}` : '' });
+      mezo('Munkakör', d.munkakor, LAP.margo + balW, FEJ_TETO + FEJ_SOR, tartW - balW);
+
+      // ---- Táblázat ----
+      const napjai = dolgozoNapjai(d);
+      const oszlopW = (tartW - OSZLOP_KOZ) / 2;
+      const oszlopok = [
+        { x: LAP.margo, napok: napjai.slice(0, 15) },
+        { x: LAP.margo + oszlopW + OSZLOP_KOZ, napok: napjai.slice(15) },
+      ];
+      const ledolgozott = napjai.filter((n) => n.dolgozik);
+      const oraOssz = ledolgozott.reduce((s, n) => s + n.orak, 0);
+      const szabadDb = napjai.filter((n) => n.szabad).length;
+
+      oszlopok.forEach(({ x, napok }, oi) => {
+        const xCimke = x + OSZL.nap, xIdo = xCimke + OSZL.cimke, xAla = xIdo + OSZL.ido, xOra = xAla + OSZL.alairas;
+        const blokkDb = napok.length + (oi === 0 ? 1 : 0); // bal oldalon a 16. hely az összesítő
+        const also = TABLA_TETO + TABLA_FEJ + blokkDb * BLOKK;
+
+        // fejléc
+        teglalap(x, TABLA_TETO, oszlopW, TABLA_FEJ, { kitoltes: SZIN.fejHatter });
+        const fk = TABLA_TETO + TABLA_FEJ / 2;
+        ir('NAP', x + (OSZL.nap + OSZL.cimke) / 2, fk, 7.5, { felkover: true, igazit: 'kozep' });
+        ir('IDŐPONT', xIdo + OSZL.ido / 2, fk, 7.5, { felkover: true, igazit: 'kozep' });
+        ir('ALÁÍRÁS', xAla + OSZL.alairas / 2, fk, 7.5, { felkover: true, igazit: 'kozep' });
+        ir('ÓRA', xOra + OSZL.ora / 2, fk, 7.5, { felkover: true, igazit: 'kozep' });
+
+        napok.forEach((n, i) => {
+          const t = TABLA_TETO + TABLA_FEJ + i * BLOKK;
+          const k = t + BLOKK / 2;
+          if (!n.dolgozik) teglalap(x, t, oszlopW, BLOKK, { kitoltes: SZIN.pihenHatter });
+          if (i > 0) vonal(x, t, x + oszlopW, t, 0.7, SZIN.vonal);
+
+          ir(String(n.nap), x + OSZL.nap / 2, k - 4, 12, { felkover: true, igazit: 'kozep' });
+          ir(HET_NAPJAI[n.hetNapja].toLowerCase(), x + OSZL.nap / 2, k + 8, 7, { igazit: 'kozep', szin: SZIN.halvany });
+
+          vonal(xCimke, k, n.dolgozik ? xOra : xIdo, k);
+          ir('Érkezett', xCimke + 5, t + BLOKK / 4, 8, { szin: SZIN.halvany });
+          ir('Távozott', xCimke + 5, t + (3 * BLOKK) / 4, 8, { szin: SZIN.halvany });
+
+          if (n.dolgozik) {
+            ir(n.erkezett, xIdo + OSZL.ido / 2, t + BLOKK / 4, 10, { igazit: 'kozep' });
+            ir(n.tavozott, xIdo + OSZL.ido / 2, t + (3 * BLOKK) / 4, 10, { igazit: 'kozep' });
+            ir(oraSzoveg(n.orak), xOra + OSZL.ora / 2, k, 12, { felkover: true, igazit: 'kozep' });
+          } else {
+            const felirat = n.szabad ? 'szabadság' : OK_FELIRAT[n.ok] || n.ok;
+            ir(felirat, xIdo + (OSZL.ido + OSZL.alairas) / 2, k, 8.5, { igazit: 'kozep', szin: SZIN.halvany });
+            ir('–', xOra + OSZL.ora / 2, k, 10, { igazit: 'kozep', szin: SZIN.halvany });
+          }
+        });
+
+        // függőleges vonalak: a fejlécben a csoportok között, a napoknál cellánként
+        // (nem munkanapon az időpont és az aláírás egy cella)
+        const napAlja = TABLA_TETO + TABLA_FEJ + napok.length * BLOKK;
+        [xIdo, xAla, xOra].forEach((vx) => vonal(vx, TABLA_TETO, vx, TABLA_TETO + TABLA_FEJ, 0.5, SZIN.belso));
+        napok.forEach((n, i) => {
+          const t = TABLA_TETO + TABLA_FEJ + i * BLOKK;
+          vonal(xCimke, t, xCimke, t + BLOKK, 0.7, SZIN.vonal);
+          vonal(xIdo, t, xIdo, t + BLOKK);
+          if (n.dolgozik) vonal(xAla, t, xAla, t + BLOKK);
+          vonal(xOra, t, xOra, t + BLOKK, 0.7, SZIN.vonal);
+        });
+        vonal(x, TABLA_TETO + TABLA_FEJ, x + oszlopW, TABLA_TETO + TABLA_FEJ, 0.9, SZIN.vonal);
+
+        if (oi === 0) {
+          const t = napAlja;
+          teglalap(x, t, oszlopW, BLOKK, { kitoltes: SZIN.fejHatter });
+          vonal(x, t, x + oszlopW, t, 0.9, SZIN.vonal);
+          ir('ÖSSZESEN', x + 8, t + BLOKK / 2, 7.5, { felkover: true });
+          const reszletek = `${ledolgozott.length} nap${szabadDb ? ` · ${szabadDb} nap szabadság` : ''}`;
+          ir(reszletek, xIdo + (OSZL.ido + OSZL.alairas) / 2, t + BLOKK / 2, 9, { igazit: 'kozep', szin: SZIN.halvany });
+          ir(oraSzoveg(oraOssz), xOra + OSZL.ora / 2, t + BLOKK / 2, 12, { felkover: true, igazit: 'kozep' });
+          vonal(xOra, t, xOra, t + BLOKK, 0.7, SZIN.vonal);
         }
+        teglalap(x, TABLA_TETO, oszlopW, also - TABLA_TETO, { keret: SZIN.vonal });
+      });
+
+      // ---- Aláírások ----
+      const tablaAlja = TABLA_TETO + TABLA_FEJ + 16 * BLOKK;
+      const alairasY = LAP.h - LAP.margo - 16;
+      ir('Kelt: ....................................................', LAP.margo, tablaAlja + 24, 9, { szin: SZIN.halvany });
+      const sorW = 190;
+      [[LAP.margo, 'munkavállaló aláírása'], [LAP.w - LAP.margo - sorW, 'munkáltató aláírása']].forEach(([sx, cimke]) => {
+        vonal(sx, alairasY, sx + sorW, alairasY, 0.7, SZIN.vonal);
+        ir(cimke, sx + sorW / 2, alairasY + 10, 7.5, { igazit: 'kozep', szin: SZIN.halvany });
       });
     });
 

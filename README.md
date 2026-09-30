@@ -1,7 +1,7 @@
 # Jelenléti ív generátor
 
 Egyszerű, böngészőben futó mini app, ami havonta legenerálja a jelenléti íveket PDF-ben
-(dolgozónként egy oldal, az eredeti nyomtatvány-sablonra írva).
+(munkavállalónként egy A4-es oldal, vektorosan rajzolt táblázattal, összesítővel és aláírás-sorokkal).
 
 ## Használat
 
@@ -26,11 +26,11 @@ JSON fájlba menthető, illetve másik gépen visszatölthető.
   áthelyezett pihenőnap, jogviszonyban áll (belépés és kilépés között), és nincs szabadnapnak jelölve.
   Áthelyezett munkanapon (pl. ledolgozós szombat) a helyettesített nap (pl. a pénteki hídnap) beosztása érvényes.
 - Munkanapon: érkezés = kezdés, távozás = kezdés + aznapi óraszám, ledolgozott óra = aznapi óraszám.
-- Minden más napon: `--------`.
+- Minden más napon az ok látszik (hétvége, munkaszüneti nap, pihenőnap, szabadság, nem munkanap), halványan kiemelve.
 
 ## Fájlok
 
 - `index.html`, `app.js` – felület és PDF-készítés
 - `naptar.js` – munkanaptár-logika
-- `lib/` – [pdf-lib](https://pdf-lib.js.org/) és fontkit (MIT), valamint `assets.js`: a sablon
-  háttérképe és az Amiko betűtípus (SIL OFL) base64-ben
+- `lib/` – [pdf-lib](https://pdf-lib.js.org/) és fontkit (MIT), valamint `assets.js`: az Amiko betűtípus
+  (SIL OFL) normál és félkövér változata base64-ben
