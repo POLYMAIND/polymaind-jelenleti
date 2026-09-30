@@ -12,8 +12,12 @@
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
         --hatter: #1a1a19; --lap: #242423; --szoveg: #ecece8; --halvany: #9d9d97; --keret: #3a3a38;
-        --pihen: #2e2e2c; --szabad: #c9443f; --fo: #6fa3d6;
+        --pihen: #2e2e2c; --szabad: #c9443f; --fo: #6fa3d6; color-scheme: dark;
       }
+    }
+    :root[data-theme="dark"] {
+      --hatter: #1a1a19; --lap: #242423; --szoveg: #ecece8; --halvany: #9d9d97; --keret: #3a3a38;
+        --pihen: #2e2e2c; --szabad: #c9443f; --fo: #6fa3d6; color-scheme: dark;
     }
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--hatter); color: var(--szoveg); font: 15px/1.4 system-ui, sans-serif; }
@@ -76,6 +80,8 @@
     <button data-ful="havi" role="tab">Havi jelenléti ív</button>
     <button data-ful="munkavallalok" role="tab">Munkavállalók</button>
   </div>
+
+  <p id="uzenet" class="hiba" role="alert" hidden></p>
 
   <div data-panel="havi">
     <section class="sor">

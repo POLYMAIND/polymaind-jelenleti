@@ -13,7 +13,10 @@
   function alapAllapot() {
     return {
       ceg: 'Polymaind Kft.',
-      dolgozok: [],
+      dolgozok: [
+        Object.assign(ujDolgozo(), { nev: 'Horváth Hella', beosztas: [0, 6, 6, 6, 6, 6, 0] }),
+        Object.assign(ujDolgozo(), { nev: 'Tőke-Andor Mária' }),
+      ],
       szabadnapok: {}, // { 'ÉÉÉÉ-HH': { dolgozoId: [napok] } }
       cegszintu: {}, // { 'ÉÉÉÉ-HH': { pihenonap: '1, 2', munkanap: '' } }
     };
@@ -117,6 +120,13 @@
         orak: dolgozik ? orak : null,
       };
     });
+  }
+
+  // Rövid üzenet a lap tetején (az alert() nem minden környezetben jelenik meg).
+  function uzen(szoveg) {
+    const el = $('uzenet');
+    el.textContent = szoveg;
+    el.hidden = !szoveg;
   }
 
   // ---------- Felület ----------
@@ -249,8 +259,14 @@
           rajzolHavi();
         });
       });
-      kartya.querySelector('.torol').addEventListener('click', () => {
-        if (!confirm(`Biztosan törlöd: ${d.nev || 'névtelen munkavállaló'}?`)) return;
+      const torol = kartya.querySelector('.torol');
+      torol.addEventListener('click', () => {
+        if (!torol.dataset.megerosit) {
+          torol.dataset.megerosit = '1';
+          torol.textContent = `Biztosan törlöd? Kattints újra`;
+          setTimeout(() => { if (torol.isConnected) { delete torol.dataset.megerosit; torol.textContent = 'Munkavállaló törlése'; } }, 4000);
+          return;
+        }
         allapot.dolgozok = allapot.dolgozok.filter((x) => x.id !== d.id);
         ment();
         rajzol();
@@ -286,8 +302,9 @@
   const OSZLOP = [{ ido: 163.8, ora: 270.1 }, { ido: 436.2, ora: 542.3 }]; // középpontok
 
   async function pdfGeneral() {
+    uzen('');
     const dolgozok = allapot.dolgozok.filter((d) => d.nev && aktivAHonapban(d));
-    if (!dolgozok.length) { alert('Ebben a hónapban nincs aktív, névvel megadott munkavállaló.'); return; }
+    if (!dolgozok.length) { uzen('Ebben a hónapban nincs aktív, névvel megadott munkavállaló.'); return; }
     const { ev, honap, kulcs } = aktualisHonap();
 
     const { PDFDocument, rgb } = PDFLib;
@@ -329,10 +346,23 @@
     });
 
     const bajtok = await doc.save();
-    const blob = new Blob([bajtok], { type: 'application/pdf' });
+    await letolt(`jelenleti_iv_${kulcs}.pdf`, bajtok, 'application/pdf');
+  }
+
+  // Fájl felajánlása letöltésre. Claude artifactként a platform letöltés-képességén át,
+  // sima böngészőben egy ideiglenes letöltési linkkel.
+  async function letolt(fajlnev, adat, tipus) {
+    const blob = new Blob([adat], { type: tipus });
+    const dl = window.claude && typeof window.claude.use === 'function' ? await window.claude.use('downloads') : null;
+    if (dl) {
+      try { await dl.save({ filename: fajlnev, data: blob }); } catch (e) {
+        if (e && e.code !== 'declined') uzen('A fájlt nem sikerült letölteni: ' + (e.message || e.code));
+      }
+      return;
+    }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `jelenleti_iv_${kulcs}.pdf`;
+    a.download = fajlnev;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -341,12 +371,7 @@
 
   // ---------- Mentés / betöltés fájlba ----------
   function exportal() {
-    const blob = new Blob([JSON.stringify(allapot, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'jelenleti_adatok.json';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    letolt('jelenleti_adatok.json', JSON.stringify(allapot, null, 2), 'application/json');
   }
 
   function importal(fajl) {
@@ -359,7 +384,7 @@
         ment();
         rajzol();
       } catch (e) {
-        alert('Nem sikerült betölteni a fájlt: ' + e.message);
+        uzen('Nem sikerült betölteni a fájlt: ' + e.message);
       }
     };
     r.readAsText(fajl);
@@ -387,7 +412,7 @@
   });
   document.querySelectorAll('[data-ful]').forEach((b) => b.addEventListener('click', () => fulValt(b.dataset.ful)));
   $('general').addEventListener('click', () => {
-    pdfGeneral().catch((e) => { console.error(e); alert('Hiba a PDF készítésekor: ' + e.message); });
+    pdfGeneral().catch((e) => { console.error(e); uzen('Hiba a PDF készítésekor: ' + e.message); });
   });
   $('export').addEventListener('click', exportal);
   $('import').addEventListener('change', (e) => { if (e.target.files[0]) importal(e.target.files[0]); e.target.value = ''; });
