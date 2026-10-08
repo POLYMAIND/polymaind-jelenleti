@@ -1,6 +1,9 @@
 /* global Naptar, PDFLib, fontkit, JELENLETI_ASSETS */
 (function () {
-  // Opcionális beállítások a betöltő oldaltól (pl. a demó saját tárolót és mintaadatot használ).
+  // Opcionális beállítások a betöltő oldaltól:
+  //   taroloKulcs, alapAllapot: saját tároló és kezdő adatok
+  //   mentesNelkul: semmit nem ment a böngészőbe (újratöltéskor minden visszaáll)
+  //   pdfHelyett: a PDF gomb ezt hívja letöltés helyett (pl. a demóban)
   const BEALLITAS = window.JELENLETI_BEALLITAS || {};
   const TAROLO_KULCS = BEALLITAS.taroloKulcs || 'jelenleti-v1';
 
@@ -40,6 +43,7 @@
   }
 
   function betolt() {
+    if (BEALLITAS.mentesNelkul) return alapAllapot();
     try {
       const s = JSON.parse(localStorage.getItem(TAROLO_KULCS));
       if (s && Array.isArray(s.dolgozok)) return normalizal(s);
@@ -47,6 +51,7 @@
     return alapAllapot();
   }
   function ment() {
+    if (BEALLITAS.mentesNelkul) return;
     try { localStorage.setItem(TAROLO_KULCS, JSON.stringify(allapot)); } catch (e) { /* nem kritikus */ }
   }
 
@@ -282,7 +287,9 @@
   function fulValt(ful) {
     document.querySelectorAll('[data-ful]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.ful === ful)));
     document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== ful; });
-    try { localStorage.setItem(TAROLO_KULCS + '-ful', ful); } catch (e) { /* nem kritikus */ }
+    if (!BEALLITAS.mentesNelkul) {
+      try { localStorage.setItem(TAROLO_KULCS + '-ful', ful); } catch (e) { /* nem kritikus */ }
+    }
   }
 
   // ---------- PDF ----------
@@ -538,13 +545,17 @@
   });
   document.querySelectorAll('[data-ful]').forEach((b) => b.addEventListener('click', () => fulValt(b.dataset.ful)));
   $('general').addEventListener('click', () => {
+    if (BEALLITAS.pdfHelyett) { BEALLITAS.pdfHelyett(); return; }
     pdfGeneral().catch((e) => { console.error(e); uzen('Hiba a PDF készítésekor: ' + e.message); });
   });
-  $('export').addEventListener('click', exportal);
-  $('import').addEventListener('change', (e) => { if (e.target.files[0]) importal(e.target.files[0]); e.target.value = ''; });
+  // Az adatmentés gombjai a demóból hiányoznak.
+  if ($('export')) $('export').addEventListener('click', exportal);
+  if ($('import')) $('import').addEventListener('change', (e) => { if (e.target.files[0]) importal(e.target.files[0]); e.target.value = ''; });
 
   let mentettFul = null;
-  try { mentettFul = localStorage.getItem(TAROLO_KULCS + '-ful'); } catch (e) { /* nem kritikus */ }
+  if (!BEALLITAS.mentesNelkul) {
+    try { mentettFul = localStorage.getItem(TAROLO_KULCS + '-ful'); } catch (e) { /* nem kritikus */ }
+  }
   fulValt(mentettFul || (allapot.dolgozok.length ? 'havi' : 'munkavallalok'));
   rajzol();
 })();

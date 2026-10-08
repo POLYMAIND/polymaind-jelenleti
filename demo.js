@@ -1,28 +1,21 @@
 // Demó: bejelentkezési képernyő és lépésenkénti bemutató az app fölött.
 // A bejelentkezés csak látszat: semmit nem ellenőriz és semmit nem küld el.
+// A demó semmit nem ment: újratöltéskor a bejelentkezés és minden változtatás elvész.
 (function () {
-  const BELEPES_KULCS = 'jelenleti-demo-belepve';
-  const TURA_LATTA_KULCS = 'jelenleti-demo-tura-latta';
   const $ = (id) => document.getElementById(id);
-
-  const tarolo = {
-    olvas(kulcs) { try { return sessionStorage.getItem(kulcs); } catch (e) { return null; } },
-    ir(kulcs, ertek) { try { ertek == null ? sessionStorage.removeItem(kulcs) : sessionStorage.setItem(kulcs, ertek); } catch (e) { /* nem kritikus */ } },
-  };
+  let turaLatta = false;
 
   // ---------- Bejelentkezés ----------
   function belep(email) {
-    tarolo.ir(BELEPES_KULCS, email);
     $('felhasznalo-email').textContent = email;
     $('belepes').hidden = true;
     $('alkalmazas').hidden = false;
     window.scrollTo(0, 0);
-    if (!tarolo.olvas(TURA_LATTA_KULCS)) turaIndit();
+    if (!turaLatta) turaIndit();
   }
 
   function kilep() {
     turaBezar();
-    tarolo.ir(BELEPES_KULCS, null);
     $('alkalmazas').hidden = true;
     $('belepes').hidden = false;
     $('belepes-urlap').querySelector('button[type=submit]').focus();
@@ -46,10 +39,25 @@
 
   $('kijelentkezes').addEventListener('click', kilep);
 
-  $('demo-visszaallitas').addEventListener('click', () => {
-    try { localStorage.removeItem(window.JELENLETI_BEALLITAS.taroloKulcs); } catch (e) { /* nem kritikus */ }
-    location.reload();
-  });
+  // Újrakezdés: mivel semmi nincs elmentve, egy újratöltés visszaállítja a mintát.
+  $('demo-visszaallitas').addEventListener('click', () => location.reload());
+
+  // ---------- Minta jelenléti ív (a PDF letöltése helyett) ----------
+  let mintaElotti = null;
+  window.demoMintaMutat = () => {
+    mintaElotti = document.activeElement;
+    const kep = $('minta-kep');
+    if (!kep.src) kep.src = window.DEMO_MINTA_KEP;
+    $('minta').hidden = false;
+    $('minta-bezar').focus();
+  };
+  function mintaBezar() {
+    $('minta').hidden = true;
+    if (mintaElotti) mintaElotti.focus();
+  }
+  $('minta-bezar').addEventListener('click', mintaBezar);
+  $('minta').addEventListener('click', (e) => { if (e.target === $('minta')) mintaBezar(); });
+  $('minta-kep').addEventListener('contextmenu', (e) => e.preventDefault());
 
   // ---------- Bemutató ----------
   const LEPESEK = [
@@ -86,7 +94,7 @@
     {
       ful: 'havi', cel: '#general',
       cim: 'Kész a PDF',
-      szoveg: 'Egy kattintás, és letöltődik a hónap jelenléti íve: munkavállalónként egy A4-es oldal, összesítővel és aláírás-sorokkal. Próbáld ki!',
+      szoveg: 'Az éles verzióban egy kattintással letöltődik a hónap jelenléti íve: munkavállalónként egy A4-es oldal, összesítővel és aláírás-sorokkal. A demóban egy mintát mutat. Próbáld ki!',
     },
   ];
 
@@ -137,7 +145,7 @@
     kiemelesTorol();
     $('tura').hidden = true;
     aktualis = -1;
-    tarolo.ir(TURA_LATTA_KULCS, '1');
+    turaLatta = true;
   }
 
   $('tura-inditas').addEventListener('click', turaIndit);
@@ -148,18 +156,16 @@
     else turaBezar();
   });
   document.addEventListener('keydown', (e) => {
-    if ($('tura').hidden) return;
-    if (e.key === 'Escape') turaBezar();
+    if (e.key !== 'Escape') return;
+    if (!$('minta').hidden) mintaBezar();
+    else if (!$('tura').hidden) turaBezar();
   });
 
   // ---------- Indítás ----------
-  // A demó korábbi változata valódi neveket tartalmazott: töröljük, ha még megvan.
-  try { localStorage.removeItem('jelenleti-demo-v1'); } catch (e) { /* nem kritikus */ }
-  const mentettEmail = tarolo.olvas(BELEPES_KULCS);
-  if (!mentettEmail) $('belepes-urlap').querySelector('button[type=submit]').focus();
-  if (mentettEmail) {
-    $('felhasznalo-email').textContent = mentettEmail;
-    $('belepes').hidden = true;
-    $('alkalmazas').hidden = false;
-  }
+  // A demó korábbi változatai a böngészőbe mentettek (köztük valódi nevekkel): töröljük őket.
+  try {
+    ['jelenleti-demo-v1', 'jelenleti-demo-v2', 'jelenleti-demo-v1-ful', 'jelenleti-demo-v2-ful'].forEach((k) => localStorage.removeItem(k));
+    ['jelenleti-demo-belepve', 'jelenleti-demo-tura-latta'].forEach((k) => sessionStorage.removeItem(k));
+  } catch (e) { /* nem kritikus */ }
+  $('belepes-urlap').querySelector('button[type=submit]').focus();
 })();

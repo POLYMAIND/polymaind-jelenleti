@@ -34,6 +34,15 @@
     .tura-gombok { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
     .tura-gombok .kihagy { margin-right: auto; border-color: transparent; color: var(--halvany); padding-left: 0; background: none; }
     main { padding-bottom: 220px; }
+
+    /* Minta jelenléti ív a PDF letöltése helyett */
+    .minta { position: fixed; inset: 0; z-index: 20; background: rgba(20, 20, 18, .55); display: grid; place-items: center; padding: 16px; }
+    .minta-kartya { background: var(--lap); border-radius: 12px; width: 100%; max-width: 720px; max-height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+    .minta-fej { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; padding: 16px; border-bottom: 1px solid var(--keret); }
+    .minta-fej h2 { font-size: 17px; margin: 0 0 4px; }
+    .minta-fej p { margin: 0; font-size: 13px; color: var(--halvany); max-width: 60ch; }
+    .minta-kep { overflow: auto; padding: 16px; background: var(--hatter); }
+    .minta-kep img { display: block; width: 100%; height: auto; border: 1px solid var(--keret); box-shadow: 0 4px 16px rgba(0, 0, 0, .12); user-select: none; -webkit-user-drag: none; }
     button:focus-visible, input:focus-visible { outline: 2px solid var(--fo); outline-offset: 2px; }
     @media (prefers-reduced-motion: no-preference) { .tura { transition: opacity .2s; } }
   </style>
@@ -48,16 +57,16 @@
     <label class="mezo"><span>Jelszó</span><input id="belepes-jelszo" type="password" autocomplete="current-password" value="demo"></label>
     <p id="belepes-hiba" class="hiba" role="alert" hidden></p>
     <button type="submit" class="fo">Belépés</button>
-    <p class="megjegyzes">Ez egy bemutató: a demó fiók adatai már ki vannak töltve, csak kattints a Belépésre. Az adatok nem kerülnek sehova, csak ebben a böngészőben maradnak.</p>
+    <p class="megjegyzes">Ez egy bemutató: a demó fiók adatai már ki vannak töltve, csak kattints a Belépésre. Bármit kipróbálhatsz, semmi nem mentődik el. Az adatok nem kerülnek sehova, csak ebben a böngészőben maradnak.</p>
   </form>
 </div>
 
 <div id="alkalmazas" hidden>
   <div class="savsor">
-    <div class="felhasznalo"><span class="demo-cimke">Demó</span>Bejelentkezve: <strong id="felhasznalo-email"></strong></div>
+    <div class="felhasznalo"><span class="demo-cimke">Demó</span>A változtatások nem mentődnek · <strong id="felhasznalo-email"></strong></div>
     <div class="gombok">
       <button id="tura-inditas">Bemutató indítása</button>
-      <button id="demo-visszaallitas">Demóadatok visszaállítása</button>
+      <button id="demo-visszaallitas">Újrakezdés</button>
       <button id="kijelentkezes">Kijelentkezés</button>
     </div>
   </div>
@@ -107,12 +116,21 @@
         <div id="munkavallalok-lista"></div>
         <button id="uj-dolgozo">+ Új munkavállaló</button>
       </section>
-      <div class="gombok">
-        <button id="export">Adatok mentése fájlba</button>
-        <label class="gomb">Adatok betöltése<input id="import" type="file" accept="application/json,.json"></label>
-      </div>
     </div>
   </main>
+</div>
+
+<div id="minta" class="minta" role="dialog" aria-modal="true" aria-labelledby="minta-cim" hidden>
+  <div class="minta-kartya">
+    <div class="minta-fej">
+      <div>
+        <h2 id="minta-cim">Így néz ki a kész jelenléti ív</h2>
+        <p>Az éles verzióban itt letöltődik a PDF, munkavállalónként egy A4-es oldallal. A demóban a letöltés ki van kapcsolva, ez egy minta kitalált adatokkal.</p>
+      </div>
+      <button id="minta-bezar" class="fo">Bezárás</button>
+    </div>
+    <div class="minta-kep"><img id="minta-kep" alt="Minta jelenléti ív: Kovács Anna, Minta Kft., havi munkaidő-nyilvántartás" draggable="false"></div>
+  </div>
 </div>
 
 <div id="tura" class="tura" role="dialog" aria-live="polite" aria-labelledby="tura-cim" hidden>
@@ -126,15 +144,14 @@
   </div>
 </div>
 
-<script src="lib/pdf-lib.min.js"></script>
-<script src="lib/fontkit.umd.min.js"></script>
-<script src="lib/assets.js"></script>
+<script src="lib/demo-minta.js"></script>
 <script src="naptar.js"></script>
 <script>
-  // A demó külön tárolót használ, így nem írja felül a valódi adatokat.
+  // A demó semmit nem ment és semmit nem tölt le: újratöltéskor minden visszaáll.
   // A mintaadatok mindig az aktuális hónapra készülnek.
   window.JELENLETI_BEALLITAS = {
-    taroloKulcs: 'jelenleti-demo-v2',
+    mentesNelkul: true,
+    pdfHelyett: () => window.demoMintaMutat(),
     alapAllapot: ({ ujDolgozo, Naptar }) => {
       const ma = new Date();
       const ev = ma.getFullYear(), honap = ma.getMonth() + 1;

@@ -17,11 +17,15 @@ JSON fájlba menthető, illetve másik gépen visszatölthető.
 
 ## Demó
 
-A `demo.html` egy bemutató változat: egyszerű bejelentkezési képernyő (a demó fiók adatai
-előre ki vannak töltve, elég a Belépésre kattintani), utána az app mintaadatokkal és egy 7 lépéses, kattintható
-bemutatóval. A demóban csak kitalált adatok vannak (Minta Kft., kitalált nevek); a cég saját
-kezdő adatai csak az `index.html`-ben szerepelnek. A demó külön tárolót használ, így nem írja felül a valódi adatokat; a
-„Demóadatok visszaállítása” gomb visszaállítja a mintát. A bejelentkezés csak látszat, nem véd semmit.
+A `demo.html` egy bemutató változat: bejelentkezési képernyő (a demó fiók adatai előre ki vannak
+töltve, elég a Belépésre kattintani), utána az app kitalált adatokkal (Minta Kft.) és egy 7 lépéses,
+kattintható bemutatóval. Mindent ki lehet próbálni, de:
+
+- semmi nem mentődik: újratöltéskor (vagy az „Újrakezdés” gombbal) minden visszaáll;
+- nincs letöltés: a PDF gomb egy minta jelenléti ív képét mutatja (`lib/demo-minta.js`),
+  az adatok mentése/betöltése gombok hiányoznak, és a PDF-készítő könyvtárak be sem töltődnek.
+
+A bejelentkezés csak látszat, nem véd semmit. A cég saját kezdő adatai csak az `index.html`-ben vannak.
 
 ## Offline, egyfájlos változat
 
