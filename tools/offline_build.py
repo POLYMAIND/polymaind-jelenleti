@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Egyetlen, önálló HTML fájlt készít (jelenleti-offline.html), amiben minden szkript benne van.
+"""Önálló, egyfájlos HTML-eket készít (jelenleti-offline.html, demo-offline.html), amikben minden benne van.
 
 Bárkinek elküldhető: letöltés után dupla kattintással megnyitható, internet nélkül is működik.
 Futtatás a repó gyökeréből: python3 tools/offline_build.py
@@ -8,7 +8,7 @@ import pathlib
 import re
 
 gyoker = pathlib.Path(__file__).resolve().parent.parent
-html = (gyoker / 'index.html').read_text(encoding='utf-8')
+CELOK = {'index.html': 'jelenleti-offline.html', 'demo.html': 'demo-offline.html'}
 
 
 def beagyaz(m):
@@ -16,6 +16,13 @@ def beagyaz(m):
     return '<script>\n' + kod + '\n</script>'
 
 
-html = re.sub(r'<script src="([^"]+)"></script>', beagyaz, html)
-(gyoker / 'jelenleti-offline.html').write_text(html, encoding='utf-8')
-print('kész: jelenleti-offline.html', len(html) // 1024, 'KB')
+def stilus(m):
+    return '<style>\n' + (gyoker / m.group(1)).read_text(encoding='utf-8') + '</style>'
+
+
+for forras, cel in CELOK.items():
+    html = (gyoker / forras).read_text(encoding='utf-8')
+    html = re.sub(r'<link rel="stylesheet" href="([^"]+)">', stilus, html)
+    html = re.sub(r'<script src="([^"]+)"></script>', beagyaz, html)
+    (gyoker / cel).write_text(html, encoding='utf-8')
+    print('kész:', cel, len(html) // 1024, 'KB')

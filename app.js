@@ -1,6 +1,8 @@
 /* global Naptar, PDFLib, fontkit, JELENLETI_ASSETS */
 (function () {
-  const TAROLO_KULCS = 'jelenleti-v1';
+  // Opcionális beállítások a betöltő oldaltól (pl. a demó saját tárolót és mintaadatot használ).
+  const BEALLITAS = window.JELENLETI_BEALLITAS || {};
+  const TAROLO_KULCS = BEALLITAS.taroloKulcs || 'jelenleti-v1';
 
   // ---------- Állapot ----------
   // beosztas: napi óraszám a hét napjai szerint, Date.getDay() sorrendben (0 = vasárnap).
@@ -10,22 +12,29 @@
       kezdes: '09:00', beosztas: [0, 8, 8, 8, 8, 8, 0],
     };
   }
-  function alapAllapot() {
+  function uresAllapot() {
     return {
       ceg: 'Polymaind Kft.',
-      dolgozok: [
-        Object.assign(ujDolgozo(), { nev: 'Horváth Hella', beosztas: [0, 6, 6, 6, 6, 6, 0] }),
-        Object.assign(ujDolgozo(), { nev: 'Tőke-Andor Mária' }),
-      ],
+      dolgozok: [],
       szabadnapok: {}, // { 'ÉÉÉÉ-HH': { dolgozoId: [napok] } }
       cegszintu: {}, // { 'ÉÉÉÉ-HH': { pihenonap: '1, 2', munkanap: '' } }
     };
+  }
+  // Kezdő adatok, ha a böngészőben még nincs mentés.
+  function alapAllapot() {
+    if (BEALLITAS.alapAllapot) return normalizal(BEALLITAS.alapAllapot({ ujDolgozo, Naptar }));
+    return Object.assign(uresAllapot(), {
+      dolgozok: [
+        Object.assign(ujDolgozo(), { nev: 'Horváth Fanni' }),
+        Object.assign(ujDolgozo(), { nev: 'Tőke-Andor Mária' }),
+      ],
+    });
   }
   function ujId() { return Math.random().toString(36).slice(2, 10); }
 
   // Régebbi mentések (egyetlen napi óraszám) átalakítása.
   function normalizal(s) {
-    const a = Object.assign(alapAllapot(), s);
+    const a = Object.assign(uresAllapot(), s);
     a.dolgozok = a.dolgozok.map((d) => {
       const u = Object.assign(ujDolgozo(), d);
       if (!Array.isArray(d.beosztas) && d.orak) u.beosztas = [0, d.orak, d.orak, d.orak, d.orak, d.orak, 0];

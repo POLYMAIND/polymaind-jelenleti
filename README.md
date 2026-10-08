@@ -15,9 +15,16 @@ Egyszerű, böngészőben futó mini app, ami havonta legenerálja a jelenléti 
 Az adatokat a böngésző megjegyzi. Az **Adatok mentése fájlba** / **Adatok betöltése** gombokkal
 JSON fájlba menthető, illetve másik gépen visszatölthető.
 
+## Demó
+
+A `demo.html` egy bemutató változat: egyszerű bejelentkezési képernyő (bármilyen e-mail és jelszó
+jó, vagy „Belépés a demó fiókkal”), utána az app mintaadatokkal és egy 7 lépéses, kattintható
+bemutatóval. A demó külön tárolót használ, így nem írja felül a valódi adatokat; a
+„Demóadatok visszaállítása” gomb visszaállítja a mintát. A bejelentkezés csak látszat, nem véd semmit.
+
 ## Offline, egyfájlos változat
 
-A `jelenleti-offline.html` egyetlen fájlban tartalmaz mindent: elküldhető bárkinek, letöltés után
+A `jelenleti-offline.html` (és a demóhoz a `demo-offline.html`) egyetlen fájlban tartalmaz mindent: elküldhető bárkinek, letöltés után
 dupla kattintással megnyitható, internet nélkül is működik, és a PDF letöltése mindenkinél megy.
 Módosítás után újragenerálás: `python3 tools/offline_build.py`.
 
@@ -38,7 +45,8 @@ Módosítás után újragenerálás: `python3 tools/offline_build.py`.
 
 ## Fájlok
 
-- `index.html`, `app.js` – felület és PDF-készítés
+- `index.html`, `app.js`, `style.css` – felület és PDF-készítés
+- `demo.html`, `demo.js` – bejelentkezés és bemutató a demóhoz
 - `naptar.js` – munkanaptár-logika
 - `lib/` – [pdf-lib](https://pdf-lib.js.org/) és fontkit (MIT), valamint `assets.js`: az Amiko betűtípus
   (SIL OFL) normál és félkövér változata base64-ben

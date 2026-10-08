@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Jelenléti ív generátor</title>
+  <title>Jelenléti ív demó</title>
   <style>
 /* A jelenléti ív generátor és a demó közös stílusa. */
 :root {
@@ -71,59 +71,130 @@ label.gomb input { display: none; }
 .ures { color: var(--halvany); margin: 0 0 12px; }
 .ures a { color: var(--fo); }
 </style>
+  <style>
+    /* Bejelentkezés */
+    .belepes { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+    .belepes-kartya { width: 100%; max-width: 380px; background: var(--lap); border: 1px solid var(--keret); border-radius: 12px; padding: 28px 24px; display: flex; flex-direction: column; gap: 14px; }
+    .marka { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+    .marka-jel { width: 32px; height: 32px; border-radius: 8px; background: var(--fo); color: #fff; display: grid; place-items: center; font-weight: 700; }
+    .marka small { display: block; font-weight: 400; color: var(--halvany); font-size: 12px; }
+    .belepes h1 { font-size: 20px; margin: 6px 0 0; }
+    .belepes .mezo input { width: 100%; padding: 9px 10px; }
+    .belepes button { width: 100%; padding: 10px 12px; }
+    .elvalaszto { display: flex; align-items: center; gap: 10px; color: var(--halvany); font-size: 12px; }
+    .elvalaszto::before, .elvalaszto::after { content: ""; flex: 1; border-top: 1px solid var(--keret); }
+    .belepes .megjegyzes { margin: 0; text-align: center; }
+
+    /* Felső sáv a belépés után */
+    .savsor { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--lap); border-bottom: 1px solid var(--keret); }
+    .savsor .felhasznalo { font-size: 13px; color: var(--halvany); min-width: 0; overflow-wrap: anywhere; }
+    .savsor .felhasznalo strong { color: var(--szoveg); }
+    .savsor .gombok button { padding: 6px 10px; font-size: 14px; }
+    .demo-cimke { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fo); border: 1px solid var(--fo); border-radius: 999px; padding: 1px 8px; margin-right: 6px; }
+
+    /* Bemutató */
+    .kiemelt { outline: 3px solid var(--fo); outline-offset: 4px; border-radius: 8px; position: relative; z-index: 2; scroll-margin-top: 72px; }
+    .tura { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: calc(100% - 32px); max-width: 420px; z-index: 10;
+      background: var(--lap); border: 1px solid var(--keret); border-radius: 12px; padding: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, .18); display: flex; flex-direction: column; gap: 8px; }
+    .tura-lepes { font-size: 12px; color: var(--halvany); font-variant-numeric: tabular-nums; }
+    .tura h2 { font-size: 16px; margin: 0; }
+    .tura p { margin: 0; font-size: 14px; }
+    .tura-gombok { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+    .tura-gombok .kihagy { margin-right: auto; border-color: transparent; color: var(--halvany); padding-left: 0; background: none; }
+    main { padding-bottom: 220px; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--fo); outline-offset: 2px; }
+    @media (prefers-reduced-motion: no-preference) { .tura { transition: opacity .2s; } }
+  </style>
 </head>
 <body>
-<main>
-  <h1>Jelenléti ív generátor</h1>
-  <p class="alcim">Munkavállalónként megadott beosztás szerint, a magyar munkanaptárral generálja a havi jelenléti íveket.</p>
 
-  <div class="fulek" role="tablist">
-    <button data-ful="havi" role="tab">Havi jelenléti ív</button>
-    <button data-ful="munkavallalok" role="tab">Munkavállalók</button>
-  </div>
+<div id="belepes" class="belepes">
+  <form id="belepes-urlap" class="belepes-kartya" novalidate>
+    <div class="marka"><span class="marka-jel">P</span><span>Polymaind<small>Jelenléti ív generátor</small></span></div>
+    <h1>Bejelentkezés</h1>
+    <label class="mezo"><span>E-mail cím</span><input id="belepes-email" type="email" autocomplete="username" placeholder="nev@ceg.hu"></label>
+    <label class="mezo"><span>Jelszó</span><input id="belepes-jelszo" type="password" autocomplete="current-password"></label>
+    <p id="belepes-hiba" class="hiba" role="alert" hidden></p>
+    <button type="submit" class="fo">Belépés</button>
+    <div class="elvalaszto">vagy</div>
+    <button type="button" id="demo-belepes">Belépés a demó fiókkal</button>
+    <p class="megjegyzes">Ez egy bemutató: bármilyen e-mail címmel és jelszóval beléphetsz. Az adatok nem kerülnek sehova, csak ebben a böngészőben maradnak.</p>
+  </form>
+</div>
 
-  <p id="uzenet" class="hiba" role="alert" hidden></p>
-
-  <div data-panel="havi">
-    <section class="sor">
-      <label class="mezo" style="flex:1 1 240px"><span>Munkáltató</span><input id="ceg" type="text"></label>
-      <label class="mezo"><span>Hónap</span><input id="honap" type="month"></label>
-    </section>
-
-    <section>
-      <div id="honap-info"></div>
-      <p class="megjegyzes" style="margin:0 0 12px">Kattints egy napra, ha az illető aznap szabadságon volt (piros). A szürke napokon a beosztása szerint nem dolgozik.</p>
-      <div id="dolgozok"></div>
-    </section>
-
-    <section>
-      <details>
-        <summary>Cégszintű eltérések ebben a hónapban</summary>
-        <div class="sor">
-          <label class="mezo"><span>Extra pihenőnapok (mindenkinek)</span><input id="ceg-pihenonap" type="text" placeholder="pl. 2, 24-31"></label>
-          <label class="mezo"><span>Extra munkanapok (pl. ledolgozós szombat)</span><input id="ceg-munkanap" type="text" placeholder="pl. 13"></label>
-        </div>
-        <div id="ceg-hiba" class="hiba"></div>
-        <p class="megjegyzes">Az ünnepnapokat és a 2025–2026-os áthelyezett munkanapokat az app magától tudja. Ha egy évre még nincs beépítve, itt add meg.</p>
-      </details>
-    </section>
-
+<div id="alkalmazas" hidden>
+  <div class="savsor">
+    <div class="felhasznalo"><span class="demo-cimke">Demó</span>Bejelentkezve: <strong id="felhasznalo-email"></strong></div>
     <div class="gombok">
-      <button id="general" class="fo">PDF generálása</button>
+      <button id="tura-inditas">Bemutató indítása</button>
+      <button id="demo-visszaallitas">Demóadatok visszaállítása</button>
+      <button id="kijelentkezes">Kijelentkezés</button>
     </div>
   </div>
 
-  <div data-panel="munkavallalok" hidden>
-    <section>
-      <div id="munkavallalok-lista"></div>
-      <button id="uj-dolgozo">+ Új munkavállaló</button>
-    </section>
-    <div class="gombok">
-      <button id="export">Adatok mentése fájlba</button>
-      <label class="gomb">Adatok betöltése<input id="import" type="file" accept="application/json,.json"></label>
+  <main>
+    <h1>Jelenléti ív generátor</h1>
+    <p class="alcim">Munkavállalónként megadott beosztás szerint, a magyar munkanaptárral generálja a havi jelenléti íveket.</p>
+
+    <div class="fulek" role="tablist">
+      <button data-ful="havi" role="tab">Havi jelenléti ív</button>
+      <button data-ful="munkavallalok" role="tab">Munkavállalók</button>
     </div>
+
+    <p id="uzenet" class="hiba" role="alert" hidden></p>
+
+    <div data-panel="havi">
+      <section class="sor">
+        <label class="mezo" style="flex:1 1 240px"><span>Munkáltató</span><input id="ceg" type="text"></label>
+        <label class="mezo"><span>Hónap</span><input id="honap" type="month"></label>
+      </section>
+
+      <section>
+        <div id="honap-info"></div>
+        <p class="megjegyzes" style="margin:0 0 12px">Kattints egy napra, ha az illető aznap szabadságon volt (piros). A szürke napokon a beosztása szerint nem dolgozik.</p>
+        <div id="dolgozok"></div>
+      </section>
+
+      <section>
+        <details>
+          <summary>Cégszintű eltérések ebben a hónapban</summary>
+          <div class="sor">
+            <label class="mezo"><span>Extra pihenőnapok (mindenkinek)</span><input id="ceg-pihenonap" type="text" placeholder="pl. 2, 24-31"></label>
+            <label class="mezo"><span>Extra munkanapok (pl. ledolgozós szombat)</span><input id="ceg-munkanap" type="text" placeholder="pl. 13"></label>
+          </div>
+          <div id="ceg-hiba" class="hiba"></div>
+          <p class="megjegyzes">Az ünnepnapokat és a 2025–2026-os áthelyezett munkanapokat az app magától tudja. Ha egy évre még nincs beépítve, itt add meg.</p>
+        </details>
+      </section>
+
+      <div class="gombok">
+        <button id="general" class="fo">PDF generálása</button>
+      </div>
+    </div>
+
+    <div data-panel="munkavallalok" hidden>
+      <section>
+        <div id="munkavallalok-lista"></div>
+        <button id="uj-dolgozo">+ Új munkavállaló</button>
+      </section>
+      <div class="gombok">
+        <button id="export">Adatok mentése fájlba</button>
+        <label class="gomb">Adatok betöltése<input id="import" type="file" accept="application/json,.json"></label>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="tura" class="tura" role="dialog" aria-live="polite" aria-labelledby="tura-cim" hidden>
+  <div class="tura-lepes" id="tura-lepes"></div>
+  <h2 id="tura-cim"></h2>
+  <p id="tura-szoveg"></p>
+  <div class="tura-gombok">
+    <button class="kihagy" id="tura-kihagy">Bezárás</button>
+    <button id="tura-vissza">Vissza</button>
+    <button class="fo" id="tura-tovabb">Tovább</button>
   </div>
-</main>
+</div>
 
 <script>
 !function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"function"==typeof define&&define.amd?define(["exports"],e):e((t=t||self).PDFLib={})}(this,(function(t){"use strict";
@@ -260,6 +331,33 @@ window.JELENLETI_ASSETS = {
   else global.Naptar = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 
+</script>
+<script>
+  // A demó külön tárolót használ, így nem írja felül a valódi adatokat.
+  // A mintaadatok mindig az aktuális hónapra készülnek.
+  window.JELENLETI_BEALLITAS = {
+    taroloKulcs: 'jelenleti-demo-v1',
+    alapAllapot: ({ ujDolgozo, Naptar }) => {
+      const ma = new Date();
+      const ev = ma.getFullYear(), honap = ma.getMonth() + 1;
+      const kulcs = `${ev}-${String(honap).padStart(2, '0')}`;
+      const munkanapok = Naptar.honapNapjai(ev, honap).filter((n) => n.munkanap).map((n) => n.nap);
+      const belepesNap = munkanapok[Math.min(7, munkanapok.length - 1)];
+      return {
+        ceg: 'Polymaind Kft.',
+        dolgozok: [
+          Object.assign(ujDolgozo(), { id: 'demo-fanni', nev: 'Horváth Fanni', munkakor: 'Projektmenedzser', adoazonosito: '8412345678' }),
+          Object.assign(ujDolgozo(), { id: 'demo-maria', nev: 'Tőke-Andor Mária', munkakor: 'Grafikus', beosztas: [0, 4, 0, 4, 0, 0, 0] }),
+          Object.assign(ujDolgozo(), {
+            id: 'demo-bence', nev: 'Kiss Bence', munkakor: 'Fejlesztő', kezdes: '08:30', beosztas: [0, 6, 6, 6, 6, 6, 0],
+            belepes: `${kulcs}-${String(belepesNap).padStart(2, '0')}`,
+          }),
+        ],
+        szabadnapok: { [kulcs]: { 'demo-fanni': munkanapok.slice(10, 12) } },
+        cegszintu: {},
+      };
+    },
+  };
 </script>
 <script>
 /* global Naptar, PDFLib, fontkit, JELENLETI_ASSETS */
@@ -816,6 +914,179 @@ window.JELENLETI_ASSETS = {
   try { mentettFul = localStorage.getItem(TAROLO_KULCS + '-ful'); } catch (e) { /* nem kritikus */ }
   fulValt(mentettFul || (allapot.dolgozok.length ? 'havi' : 'munkavallalok'));
   rajzol();
+})();
+
+</script>
+<script>
+// Demó: bejelentkezési képernyő és lépésenkénti bemutató az app fölött.
+// A bejelentkezés csak látszat: semmit nem ellenőriz és semmit nem küld el.
+(function () {
+  const BELEPES_KULCS = 'jelenleti-demo-belepve';
+  const TURA_LATTA_KULCS = 'jelenleti-demo-tura-latta';
+  const $ = (id) => document.getElementById(id);
+
+  const tarolo = {
+    olvas(kulcs) { try { return sessionStorage.getItem(kulcs); } catch (e) { return null; } },
+    ir(kulcs, ertek) { try { ertek == null ? sessionStorage.removeItem(kulcs) : sessionStorage.setItem(kulcs, ertek); } catch (e) { /* nem kritikus */ } },
+  };
+
+  // ---------- Bejelentkezés ----------
+  function belep(email) {
+    tarolo.ir(BELEPES_KULCS, email);
+    $('felhasznalo-email').textContent = email;
+    $('belepes').hidden = true;
+    $('alkalmazas').hidden = false;
+    window.scrollTo(0, 0);
+    if (!tarolo.olvas(TURA_LATTA_KULCS)) turaIndit();
+  }
+
+  function kilep() {
+    turaBezar();
+    tarolo.ir(BELEPES_KULCS, null);
+    $('alkalmazas').hidden = true;
+    $('belepes').hidden = false;
+    $('belepes-jelszo').value = '';
+    $('belepes-email').focus();
+  }
+
+  $('belepes-urlap').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = $('belepes-email').value.trim();
+    const hiba = $('belepes-hiba');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      hiba.textContent = 'Adj meg egy érvényes e-mail címet, például nev@ceg.hu.';
+    } else if (!$('belepes-jelszo').value) {
+      hiba.textContent = 'Add meg a jelszót. A demóban bármilyen jelszó jó.';
+    } else {
+      hiba.hidden = true;
+      belep(email);
+      return;
+    }
+    hiba.hidden = false;
+  });
+
+  $('demo-belepes').addEventListener('click', () => {
+    $('belepes-email').value = 'demo@polymaind.hu';
+    $('belepes-jelszo').value = 'demo';
+    $('belepes-hiba').hidden = true;
+    belep('demo@polymaind.hu');
+  });
+
+  $('kijelentkezes').addEventListener('click', kilep);
+
+  $('demo-visszaallitas').addEventListener('click', () => {
+    try { localStorage.removeItem('jelenleti-demo-v1'); } catch (e) { /* nem kritikus */ }
+    location.reload();
+  });
+
+  // ---------- Bemutató ----------
+  const LEPESEK = [
+    {
+      ful: 'havi', cel: '.fulek',
+      cim: 'Üdv a demóban!',
+      szoveg: 'Az app két fülből áll. A Munkavállalók fülön adod meg az embereket és a beosztásukat, a Havi jelenléti ív fülön pedig elkészül a PDF.',
+    },
+    {
+      ful: 'munkavallalok', cel: '#munkavallalok-lista .dolgozo:nth-child(1) .racs',
+      cim: 'Munkavállalói adatok',
+      szoveg: 'Név, munkakör, adóazonosító jel, belépés és kilépés dátuma, munkakezdés. Mindez egyszer kell, utána minden hónapban ebből dolgozik.',
+    },
+    {
+      ful: 'munkavallalok', cel: '#munkavallalok-lista .dolgozo:nth-child(2) .beosztas',
+      cim: 'Heti beosztás',
+      szoveg: 'A hét minden napjára megadható a napi óraszám. Mária részmunkaidős: hétfőn és szerdán dolgozik 4-4 órát. Az üres nap azt jelenti, hogy aznap nem dolgozik.',
+    },
+    {
+      ful: 'havi', cel: '#honap',
+      cim: 'Hónap kiválasztása',
+      szoveg: 'Az ünnepnapokat, a hídnapokat és a ledolgozós szombatokat az app magától tudja, ezekkel nincs teendő.',
+    },
+    {
+      ful: 'havi', cel: '#dolgozok .dolgozo:nth-child(1)',
+      cim: 'Szabadság jelölése',
+      szoveg: 'Fanninak ebben a hónapban két nap szabadsága van (piros). Kattints bármelyik fehér napra, és az is szabadnap lesz; az összesítő azonnal frissül.',
+    },
+    {
+      ful: 'havi', cel: '#dolgozok .dolgozo:nth-child(3)',
+      cim: 'Belépés hónap közben',
+      szoveg: 'Bence a hónap közben lépett be, ezért az előtte lévő napok szürkék. Az ő ívére csak a belépése utáni munkanapok kerülnek.',
+    },
+    {
+      ful: 'havi', cel: '#general',
+      cim: 'Kész a PDF',
+      szoveg: 'Egy kattintás, és letöltődik a hónap jelenléti íve: munkavállalónként egy A4-es oldal, összesítővel és aláírás-sorokkal. Próbáld ki!',
+    },
+  ];
+
+  let aktualis = -1;
+  let kiemelt = null;
+
+  function kiemelesTorol() {
+    if (kiemelt) kiemelt.classList.remove('kiemelt');
+    kiemelt = null;
+  }
+
+  function lepesMutat(i) {
+    aktualis = i;
+    const lepes = LEPESEK[i];
+    const ful = document.querySelector(`[data-ful="${lepes.ful}"]`);
+    if (ful && ful.getAttribute('aria-selected') !== 'true') ful.click();
+
+    kiemelesTorol();
+    const el = document.querySelector(lepes.cel);
+    if (el) {
+      el.classList.add('kiemelt');
+      kiemelt = el;
+      const halk = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ block: 'start', behavior: halk ? 'auto' : 'smooth' });
+    }
+
+    $('tura-lepes').textContent = `${i + 1} / ${LEPESEK.length}`;
+    $('tura-cim').textContent = lepes.cim;
+    $('tura-szoveg').textContent = lepes.szoveg;
+    $('tura-vissza').disabled = i === 0;
+    $('tura-tovabb').textContent = i === LEPESEK.length - 1 ? 'Befejezés' : 'Tovább';
+    $('tura').hidden = false;
+  }
+
+  // Ha az app újrarajzolja a kiemelt részt (pl. kattintás után), a kiemelés kerüljön vissza.
+  new MutationObserver(() => {
+    if (aktualis < 0 || (kiemelt && kiemelt.isConnected)) return;
+    const el = document.querySelector(LEPESEK[aktualis].cel);
+    if (el) { el.classList.add('kiemelt'); kiemelt = el; }
+  }).observe($('alkalmazas'), { childList: true, subtree: true });
+
+  function turaIndit() {
+    lepesMutat(0);
+    $('tura-tovabb').focus();
+  }
+
+  function turaBezar() {
+    kiemelesTorol();
+    $('tura').hidden = true;
+    aktualis = -1;
+    tarolo.ir(TURA_LATTA_KULCS, '1');
+  }
+
+  $('tura-inditas').addEventListener('click', turaIndit);
+  $('tura-kihagy').addEventListener('click', turaBezar);
+  $('tura-vissza').addEventListener('click', () => { if (aktualis > 0) lepesMutat(aktualis - 1); });
+  $('tura-tovabb').addEventListener('click', () => {
+    if (aktualis < LEPESEK.length - 1) lepesMutat(aktualis + 1);
+    else turaBezar();
+  });
+  document.addEventListener('keydown', (e) => {
+    if ($('tura').hidden) return;
+    if (e.key === 'Escape') turaBezar();
+  });
+
+  // ---------- Indítás ----------
+  const mentettEmail = tarolo.olvas(BELEPES_KULCS);
+  if (mentettEmail) {
+    $('felhasznalo-email').textContent = mentettEmail;
+    $('belepes').hidden = true;
+    $('alkalmazas').hidden = false;
+  }
 })();
 
 </script>

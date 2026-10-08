@@ -1,0 +1,65 @@
+/* A jelenléti ív generátor és a demó közös stílusa. */
+:root {
+  --hatter: #f5f5f3; --lap: #fff; --szoveg: #1d1d1b; --halvany: #6b6b66; --keret: #dcdcd6;
+  --pihen: #ecebe6; --szabad: #d9534f; --fo: #2f5d8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --hatter: #1a1a19; --lap: #242423; --szoveg: #ecece8; --halvany: #9d9d97; --keret: #3a3a38;
+    --pihen: #2e2e2c; --szabad: #c9443f; --fo: #6fa3d6; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --hatter: #1a1a19; --lap: #242423; --szoveg: #ecece8; --halvany: #9d9d97; --keret: #3a3a38;
+    --pihen: #2e2e2c; --szabad: #c9443f; --fo: #6fa3d6; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--hatter); color: var(--szoveg); font: 15px/1.4 system-ui, sans-serif; }
+main { max-width: 900px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+.alcim { color: var(--halvany); margin: 0 0 20px; }
+section { background: var(--lap); border: 1px solid var(--keret); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.sor { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.mezo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--halvany); }
+.mezo.nev { flex: 1 1 220px; }
+input { font: inherit; color: var(--szoveg); background: var(--lap); border: 1px solid var(--keret); border-radius: 6px; padding: 6px 8px; }
+input[type=number] { width: 80px; }
+button { font: inherit; cursor: pointer; border-radius: 6px; border: 1px solid var(--keret); background: var(--lap); color: var(--szoveg); padding: 7px 12px; }
+button.fo { background: var(--fo); border-color: var(--fo); color: #fff; font-weight: 600; }
+#honap-info { color: var(--halvany); font-size: 13px; padding-bottom: 8px; }
+.dolgozo { border-top: 1px solid var(--keret); padding: 14px 0; }
+.dolgozo:first-child { border-top: 0; padding-top: 0; }
+.dolgozo-fej { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.naptar { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 4px; margin-top: 10px; }
+.nap { padding: 3px 0; font-size: 13px; line-height: 1.1; display: flex; flex-direction: column; align-items: center; }
+.nap small { font-size: 10px; color: var(--halvany); }
+.nap.pihen { background: var(--pihen); color: var(--halvany); cursor: default; border-color: transparent; }
+.nap.szabad { background: var(--szabad); border-color: var(--szabad); color: #fff; }
+.nap.szabad small { color: #fff; }
+.osszesito { font-size: 13px; color: var(--halvany); margin-top: 6px; }
+details summary { cursor: pointer; font-weight: 600; }
+details .sor { margin-top: 12px; }
+details .mezo { flex: 1 1 220px; }
+.hiba { color: var(--szabad); font-size: 13px; margin-top: 6px; }
+.megjegyzes { font-size: 13px; color: var(--halvany); margin: 8px 0 0; }
+.gombok { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+label.gomb { display: inline-block; font-size: 15px; border: 1px solid var(--keret); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+label.gomb input { display: none; }
+.fulek { display: flex; gap: 4px; border-bottom: 1px solid var(--keret); margin-bottom: 16px; }
+.fulek button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 10px 14px; color: var(--halvany); font-weight: 600; }
+.fulek button[aria-selected="true"] { color: var(--fo); border-bottom-color: var(--fo); }
+[hidden] { display: none !important; }
+.dolgozo-cim { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.dolgozo-cim span { font-size: 13px; color: var(--halvany); }
+.racs { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.racs .szeles { grid-column: 1 / -1; }
+.racs input, .dolgozo > .mezo input { width: 100%; }
+.beosztas-cim { margin-top: 12px; }
+.beosztas { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; margin: 4px 0 10px; }
+.beosztas label { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; color: var(--halvany); }
+.beosztas input { width: 56px; text-align: center; }
+.heti { font-size: 13px; color: var(--halvany); padding: 0 0 8px 6px; }
+.kartya-lab { margin-top: 10px; }
+.torol { color: var(--szabad); }
+.ures { color: var(--halvany); margin: 0 0 12px; }
+.ures a { color: var(--fo); }
