@@ -25,8 +25,7 @@
     tarolo.ir(BELEPES_KULCS, null);
     $('alkalmazas').hidden = true;
     $('belepes').hidden = false;
-    $('belepes-jelszo').value = '';
-    $('belepes-email').focus();
+    $('belepes-urlap').querySelector('button[type=submit]').focus();
   }
 
   $('belepes-urlap').addEventListener('submit', (e) => {
@@ -43,13 +42,6 @@
       return;
     }
     hiba.hidden = false;
-  });
-
-  $('demo-belepes').addEventListener('click', () => {
-    $('belepes-email').value = 'demo@polymaind.hu';
-    $('belepes-jelszo').value = 'demo';
-    $('belepes-hiba').hidden = true;
-    belep('demo@polymaind.hu');
   });
 
   $('kijelentkezes').addEventListener('click', kilep);
@@ -162,6 +154,7 @@
 
   // ---------- Indítás ----------
   const mentettEmail = tarolo.olvas(BELEPES_KULCS);
+  if (!mentettEmail) $('belepes-urlap').querySelector('button[type=submit]').focus();
   if (mentettEmail) {
     $('felhasznalo-email').textContent = mentettEmail;
     $('belepes').hidden = true;

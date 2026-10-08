@@ -17,8 +17,8 @@ JSON fájlba menthető, illetve másik gépen visszatölthető.
 
 ## Demó
 
-A `demo.html` egy bemutató változat: egyszerű bejelentkezési képernyő (bármilyen e-mail és jelszó
-jó, vagy „Belépés a demó fiókkal”), utána az app mintaadatokkal és egy 7 lépéses, kattintható
+A `demo.html` egy bemutató változat: egyszerű bejelentkezési képernyő (a demó fiók adatai
+előre ki vannak töltve, elég a Belépésre kattintani), utána az app mintaadatokkal és egy 7 lépéses, kattintható
 bemutatóval. A demó külön tárolót használ, így nem írja felül a valódi adatokat; a
 „Demóadatok visszaállítása” gomb visszaállítja a mintát. A bejelentkezés csak látszat, nem véd semmit.
 

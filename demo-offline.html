@@ -81,8 +81,6 @@ label.gomb input { display: none; }
     .belepes h1 { font-size: 20px; margin: 6px 0 0; }
     .belepes .mezo input { width: 100%; padding: 9px 10px; }
     .belepes button { width: 100%; padding: 10px 12px; }
-    .elvalaszto { display: flex; align-items: center; gap: 10px; color: var(--halvany); font-size: 12px; }
-    .elvalaszto::before, .elvalaszto::after { content: ""; flex: 1; border-top: 1px solid var(--keret); }
     .belepes .megjegyzes { margin: 0; text-align: center; }
 
     /* Felső sáv a belépés után */
@@ -112,13 +110,11 @@ label.gomb input { display: none; }
   <form id="belepes-urlap" class="belepes-kartya" novalidate>
     <div class="marka"><span class="marka-jel">P</span><span>Polymaind<small>Jelenléti ív generátor</small></span></div>
     <h1>Bejelentkezés</h1>
-    <label class="mezo"><span>E-mail cím</span><input id="belepes-email" type="email" autocomplete="username" placeholder="nev@ceg.hu"></label>
-    <label class="mezo"><span>Jelszó</span><input id="belepes-jelszo" type="password" autocomplete="current-password"></label>
+    <label class="mezo"><span>E-mail cím</span><input id="belepes-email" type="email" autocomplete="username" value="demo@polymaind.hu"></label>
+    <label class="mezo"><span>Jelszó</span><input id="belepes-jelszo" type="password" autocomplete="current-password" value="demo"></label>
     <p id="belepes-hiba" class="hiba" role="alert" hidden></p>
     <button type="submit" class="fo">Belépés</button>
-    <div class="elvalaszto">vagy</div>
-    <button type="button" id="demo-belepes">Belépés a demó fiókkal</button>
-    <p class="megjegyzes">Ez egy bemutató: bármilyen e-mail címmel és jelszóval beléphetsz. Az adatok nem kerülnek sehova, csak ebben a böngészőben maradnak.</p>
+    <p class="megjegyzes">Ez egy bemutató: a demó fiók adatai már ki vannak töltve, csak kattints a Belépésre. Az adatok nem kerülnek sehova, csak ebben a böngészőben maradnak.</p>
   </form>
 </div>
 
@@ -945,8 +941,7 @@ window.JELENLETI_ASSETS = {
     tarolo.ir(BELEPES_KULCS, null);
     $('alkalmazas').hidden = true;
     $('belepes').hidden = false;
-    $('belepes-jelszo').value = '';
-    $('belepes-email').focus();
+    $('belepes-urlap').querySelector('button[type=submit]').focus();
   }
 
   $('belepes-urlap').addEventListener('submit', (e) => {
@@ -963,13 +958,6 @@ window.JELENLETI_ASSETS = {
       return;
     }
     hiba.hidden = false;
-  });
-
-  $('demo-belepes').addEventListener('click', () => {
-    $('belepes-email').value = 'demo@polymaind.hu';
-    $('belepes-jelszo').value = 'demo';
-    $('belepes-hiba').hidden = true;
-    belep('demo@polymaind.hu');
   });
 
   $('kijelentkezes').addEventListener('click', kilep);
@@ -1082,6 +1070,7 @@ window.JELENLETI_ASSETS = {
 
   // ---------- Indítás ----------
   const mentettEmail = tarolo.olvas(BELEPES_KULCS);
+  if (!mentettEmail) $('belepes-urlap').querySelector('button[type=submit]').focus();
   if (mentettEmail) {
     $('felhasznalo-email').textContent = mentettEmail;
     $('belepes').hidden = true;
