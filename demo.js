@@ -47,7 +47,7 @@
   $('kijelentkezes').addEventListener('click', kilep);
 
   $('demo-visszaallitas').addEventListener('click', () => {
-    try { localStorage.removeItem('jelenleti-demo-v1'); } catch (e) { /* nem kritikus */ }
+    try { localStorage.removeItem(window.JELENLETI_BEALLITAS.taroloKulcs); } catch (e) { /* nem kritikus */ }
     location.reload();
   });
 
@@ -66,7 +66,7 @@
     {
       ful: 'munkavallalok', cel: '#munkavallalok-lista .dolgozo:nth-child(2) .beosztas',
       cim: 'Heti beosztás',
-      szoveg: 'A hét minden napjára megadható a napi óraszám. Mária részmunkaidős: hétfőn és szerdán dolgozik 4-4 órát. Az üres nap azt jelenti, hogy aznap nem dolgozik.',
+      szoveg: 'A hét minden napjára megadható a napi óraszám. Péter részmunkaidős: hétfőn és szerdán dolgozik 4-4 órát. Az üres nap azt jelenti, hogy aznap nem dolgozik.',
     },
     {
       ful: 'havi', cel: '#honap',
@@ -76,12 +76,12 @@
     {
       ful: 'havi', cel: '#dolgozok .dolgozo:nth-child(1)',
       cim: 'Szabadság jelölése',
-      szoveg: 'Fanninak ebben a hónapban két nap szabadsága van (piros). Kattints bármelyik fehér napra, és az is szabadnap lesz; az összesítő azonnal frissül.',
+      szoveg: 'Annának ebben a hónapban két nap szabadsága van (piros). Kattints bármelyik fehér napra, és az is szabadnap lesz; az összesítő azonnal frissül.',
     },
     {
       ful: 'havi', cel: '#dolgozok .dolgozo:nth-child(3)',
       cim: 'Belépés hónap közben',
-      szoveg: 'Bence a hónap közben lépett be, ezért az előtte lévő napok szürkék. Az ő ívére csak a belépése utáni munkanapok kerülnek.',
+      szoveg: 'Eszter a hónap közben lépett be, ezért az előtte lévő napok szürkék. Az ő ívére csak a belépése utáni munkanapok kerülnek.',
     },
     {
       ful: 'havi', cel: '#general',
@@ -153,6 +153,8 @@
   });
 
   // ---------- Indítás ----------
+  // A demó korábbi változata valódi neveket tartalmazott: töröljük, ha még megvan.
+  try { localStorage.removeItem('jelenleti-demo-v1'); } catch (e) { /* nem kritikus */ }
   const mentettEmail = tarolo.olvas(BELEPES_KULCS);
   if (!mentettEmail) $('belepes-urlap').querySelector('button[type=submit]').focus();
   if (mentettEmail) {

@@ -42,9 +42,9 @@
 
 <div id="belepes" class="belepes">
   <form id="belepes-urlap" class="belepes-kartya" novalidate>
-    <div class="marka"><span class="marka-jel">P</span><span>Polymaind<small>Jelenléti ív generátor</small></span></div>
+    <div class="marka"><span class="marka-jel">J</span><span>Jelenléti ív<small>generátor · demó</small></span></div>
     <h1>Bejelentkezés</h1>
-    <label class="mezo"><span>E-mail cím</span><input id="belepes-email" type="email" autocomplete="username" value="demo@polymaind.hu"></label>
+    <label class="mezo"><span>E-mail cím</span><input id="belepes-email" type="email" autocomplete="username" value="demo@example.com"></label>
     <label class="mezo"><span>Jelszó</span><input id="belepes-jelszo" type="password" autocomplete="current-password" value="demo"></label>
     <p id="belepes-hiba" class="hiba" role="alert" hidden></p>
     <button type="submit" class="fo">Belépés</button>
@@ -134,7 +134,7 @@
   // A demó külön tárolót használ, így nem írja felül a valódi adatokat.
   // A mintaadatok mindig az aktuális hónapra készülnek.
   window.JELENLETI_BEALLITAS = {
-    taroloKulcs: 'jelenleti-demo-v1',
+    taroloKulcs: 'jelenleti-demo-v2',
     alapAllapot: ({ ujDolgozo, Naptar }) => {
       const ma = new Date();
       const ev = ma.getFullYear(), honap = ma.getMonth() + 1;
@@ -142,16 +142,16 @@
       const munkanapok = Naptar.honapNapjai(ev, honap).filter((n) => n.munkanap).map((n) => n.nap);
       const belepesNap = munkanapok[Math.min(7, munkanapok.length - 1)];
       return {
-        ceg: 'Polymaind Kft.',
+        ceg: 'Minta Kft.',
         dolgozok: [
-          Object.assign(ujDolgozo(), { id: 'demo-fanni', nev: 'Horváth Fanni', munkakor: 'Projektmenedzser', adoazonosito: '8412345678' }),
-          Object.assign(ujDolgozo(), { id: 'demo-maria', nev: 'Tőke-Andor Mária', munkakor: 'Grafikus', beosztas: [0, 4, 0, 4, 0, 0, 0] }),
+          Object.assign(ujDolgozo(), { id: 'demo-anna', nev: 'Kovács Anna', munkakor: 'Projektmenedzser', adoazonosito: '8412345678' }),
+          Object.assign(ujDolgozo(), { id: 'demo-peter', nev: 'Szabó Péter', munkakor: 'Grafikus', beosztas: [0, 4, 0, 4, 0, 0, 0] }),
           Object.assign(ujDolgozo(), {
-            id: 'demo-bence', nev: 'Kiss Bence', munkakor: 'Fejlesztő', kezdes: '08:30', beosztas: [0, 6, 6, 6, 6, 6, 0],
+            id: 'demo-eszter', nev: 'Nagy Eszter', munkakor: 'Fejlesztő', kezdes: '08:30', beosztas: [0, 6, 6, 6, 6, 6, 0],
             belepes: `${kulcs}-${String(belepesNap).padStart(2, '0')}`,
           }),
         ],
-        szabadnapok: { [kulcs]: { 'demo-fanni': munkanapok.slice(10, 12) } },
+        szabadnapok: { [kulcs]: { 'demo-anna': munkanapok.slice(10, 12) } },
         cegszintu: {},
       };
     },

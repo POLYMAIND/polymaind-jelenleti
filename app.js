@@ -14,21 +14,16 @@
   }
   function uresAllapot() {
     return {
-      ceg: 'Polymaind Kft.',
+      ceg: '',
       dolgozok: [],
       szabadnapok: {}, // { 'ÉÉÉÉ-HH': { dolgozoId: [napok] } }
       cegszintu: {}, // { 'ÉÉÉÉ-HH': { pihenonap: '1, 2', munkanap: '' } }
     };
   }
-  // Kezdő adatok, ha a böngészőben még nincs mentés.
+  // Kezdő adatok, ha a böngészőben még nincs mentés (a betöltő oldal adhatja meg).
   function alapAllapot() {
     if (BEALLITAS.alapAllapot) return normalizal(BEALLITAS.alapAllapot({ ujDolgozo, Naptar }));
-    return Object.assign(uresAllapot(), {
-      dolgozok: [
-        Object.assign(ujDolgozo(), { nev: 'Horváth Fanni' }),
-        Object.assign(ujDolgozo(), { nev: 'Tőke-Andor Mária' }),
-      ],
-    });
+    return uresAllapot();
   }
   function ujId() { return Math.random().toString(36).slice(2, 10); }
 

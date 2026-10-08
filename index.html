@@ -63,6 +63,18 @@
 <script src="lib/fontkit.umd.min.js"></script>
 <script src="lib/assets.js"></script>
 <script src="naptar.js"></script>
+<script>
+  // Kezdő adatok, ha ebben a böngészőben még nincs mentés.
+  window.JELENLETI_BEALLITAS = {
+    alapAllapot: ({ ujDolgozo }) => ({
+      ceg: 'Polymaind Kft.',
+      dolgozok: [
+        Object.assign(ujDolgozo(), { nev: 'Horváth Fanni' }),
+        Object.assign(ujDolgozo(), { nev: 'Tőke-Andor Mária' }),
+      ],
+    }),
+  };
+</script>
 <script src="app.js"></script>
 </body>
 </html>
